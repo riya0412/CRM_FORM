@@ -53,30 +53,31 @@ def technician_page():
     st.dataframe(df_selected[df_selected['Status'] == 'Preliminary Meeting Scheduled'])
 
     # Select a client
-    client_id = st.selectbox("Select Client ID", df[df['Status'] == 'Preliminary Meeting Scheduled']['Lead Project ID'])
-    client_id=int(client_id)
-    client_info = df[df['Lead Project ID'] == client_id]
-    client_info=client_info.iloc[0]
+    client_id = st.selectbox("Select Client ID",["Please select"] + list(df[df['Status'] == 'Preliminary Meeting Scheduled']['Lead Project ID']))
+    if client_id!="Please select":
+        client_id=int(client_id)
+        client_info = df[df['Lead Project ID'] == client_id]
+        client_info=client_info.iloc[0]
 
-    st.subheader(f"Client: {client_info['Lead Name']}")
-    st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
-    st.write(f"📱Email: {client_info['Email']}")
-    st.write(f"🏠Address: {client_info['Address']}")
-    st.write(f"🕑Status: {client_info['Status']}")
-    st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
-    # Upload documents
-    uploaded_files = st.file_uploader("Upload Dimension Documents", accept_multiple_files=True)
-    if st.button("Upload"):
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                file_link = upload_to_drive(uploaded_file)
-                st.success(f"Document uploaded successfully: {file_link}")
-                # Process the files and update the status in your database
-                workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-                leads_sheet = workbook.worksheet('Leads from Anantya')
-                pipeline_sheet = workbook.worksheet('Pipeline')
-                row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc('Document uploaded by Technician') + 1, file_link)
-                log_action(client_id, "Leads from Anantya", "Document uploaded by Technician","Document Uploaded", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('Document uploaded by Technician?') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "Document uploaded by Technician?","Document Uploaded", "0", "TRUE")
+        st.subheader(f"Client: {client_info['Lead Name']}")
+        st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
+        st.write(f"📱Email: {client_info['Email']}")
+        st.write(f"🏠Address: {client_info['Address']}")
+        st.write(f"🕑Status: {client_info['Status']}")
+        st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
+        # Upload documents
+        uploaded_files = st.file_uploader("Upload Dimension Documents", accept_multiple_files=True)
+        if st.button("Upload"):
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    file_link = upload_to_drive(uploaded_file)
+                    st.success(f"Document uploaded successfully: {file_link}")
+                    # Process the files and update the status in your database
+                    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+                    leads_sheet = workbook.worksheet('Leads from Anantya')
+                    pipeline_sheet = workbook.worksheet('Pipeline')
+                    row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
+                    leads_sheet.update_cell(row_index, df.columns.get_loc('Document uploaded by Technician') + 1, file_link)
+                    log_action(client_id, "Leads from Anantya", "Document uploaded by Technician","Document Uploaded", "Pending", "Uploaded")
+                    pipeline_sheet.update_cell(row_index,df.columns.get_loc('Document uploaded by Technician?') + 1,"TRUE")
+                    log_action(client_id, "Pipeline", "Document uploaded by Technician?","Document Uploaded", "0", "TRUE")
