@@ -193,7 +193,7 @@ def client_details(client_id):
 
     st.subheader("Documents")
     for doc in documents:
-        col1,col2,col3=st.columns([6, 1, 1])
+        col1,col2,col3=st.columns([4, 2, 1])
         with col1:
             st.write(f"[{doc['name']}]({doc['link']})")
         with col2:
