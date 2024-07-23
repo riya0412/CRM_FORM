@@ -59,24 +59,6 @@ def upload_5document(client_id):
                 pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"TRUE")
                 log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated","Document Uploaded", "0", "TRUE")
 
-def upload_Quote(client_id):
-    df = load_data()
-    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
-    if st.button("Upload"):
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                file_link = upload_to_drive(uploaded_file)
-                st.success(f"Document uploaded successfully: {file_link}")
-                # Update the status in your database
-                workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-                leads_sheet = workbook.worksheet('Leads from Anantya')
-                pipeline_sheet = workbook.worksheet('Pipeline')
-                row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc("Quotation Sent") + 1, file_link)
-                log_action(client_id,"Leads from Anantya", "Quotation Sent","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('Quotation Sent') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "Quotation Sent","Document Uploaded", "0", "TRUE")
-
 def upload_PI(client_id):
     df = load_data()
     uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
@@ -118,7 +100,6 @@ def client_details(client_id):
             st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
             st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
             st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
-            st.write(f"📝Quotation Sent: {client_info['Quotation Sent']}")
             st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
             st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
     # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
@@ -135,8 +116,8 @@ def admin_page():
 
     # Load the data
     df = load_data()
-    page=st.sidebar.selectbox("Admin Task",["Upload 5 Documents consolidated","Upload Quotation","Schedule Call","Upload PI and Survey sheet"])
-    if page=="Upload 5 Documents consolidated":
+    page=st.sidebar.selectbox("Admin Task",["Upload Quotation","Schedule Call","Upload PI and Survey sheet"])
+    if page=="Upload Quotation":
         # Display all clients
         st.subheader("Pending Document Clients")
         selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
@@ -152,20 +133,6 @@ def admin_page():
             upload_5document(client_id)
         # Select a client
         # log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
-    elif page=="Upload Quotation":
-        # Display all clients
-        st.subheader("Pending Document Clients")
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected[df_selected['Status'] == 'Admin Uploads 5 Documents consolidated'])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Admin Uploads 5 Documents consolidated']['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
-            client_id=int(client_id)
-            client_details(client_id)
-            # Upload documents
-            st.subheader("Upload Documents")
-            upload_Quote(client_id)
     elif page=="Schedule Call":
         selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
         df_selected = df[selected_columns]
