@@ -112,14 +112,15 @@ def client_details(client_id):
             st.write(f"🏠Address: {client_info['Address']}")
             st.write(f"🕑Status: {client_info['Status']}")
             st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
-        with col2:
             st.write(f"📆Last Contact: {client_info['Last Contact']}")
             st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
+        with col2:
             st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
             st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
             st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
-    # st.write(f"Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
-    # st.write(f"PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
+            st.write(f"📝Quotation Sent: {client_info['Quotation Sent']}")
+            st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
+            st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
     # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
     # st.write(f"Survey Feedback: {client_info['Survey Feedback']}")
             
