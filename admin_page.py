@@ -53,7 +53,7 @@ def client_details(client_id):
         col1,col2=st.columns(2)
 
         with col1:
-            st.write(f"📱WhatsApp Number: {client_info['WhatsApp Number']}")
+            st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
             st.write(f"📱Email: {client_info['Email']}")
             st.write(f"🏠Address: {client_info['Address']}")
             st.write(f"🕑Status: {client_info['Status']}")
@@ -62,7 +62,7 @@ def client_details(client_id):
             st.write(f"📆Last Contact: {client_info['Last Contact']}")
             st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
             st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
-    # st.write(f"Document Upload by Client: {client_info['Documment Upload by Client']}")
+            st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
             st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
     # st.write(f"Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
     # st.write(f"PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
@@ -97,11 +97,13 @@ def admin_page():
     df = load_data()
 
     # Display all clients
-    st.subheader("All Clients")
-    st.dataframe(df)
-    client_id = st.sidebar.selectbox("Select Client ID", df['Lead Project ID'])
+    st.subheader("Pending Document Clients")
+    selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
+    df_selected = df[selected_columns]
+    st.dataframe(df_selected[(df_selected['Status'] == 'Document uploaded by Technician') | (df_selected['Status'] == 'Document Upload by Client')])
+    client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[(df['Status'] == 'Document uploaded by Technician') | (df['Status'] == 'Document Upload by Client')]['Lead Project ID']))
     # client_id = st.sidebar.text_input("Enter Client ID", "")
-    if client_id:
+    if client_id!="Please select":
         client_id=int(client_id)
         client_details(client_id)
     # Select a client

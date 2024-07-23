@@ -46,10 +46,11 @@ def technician_page():
 
     # Load the data
     df = load_data()
-
+    selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
+    df_selected = df[selected_columns]
     # Display the clients assigned to the technician
     st.subheader("Assigned Clients")
-    st.dataframe(df[df['Status'] == 'Preliminary Meeting Scheduled'])
+    st.dataframe(df_selected[df_selected['Status'] == 'Preliminary Meeting Scheduled'])
 
     # Select a client
     client_id = st.selectbox("Select Client ID", df[df['Status'] == 'Preliminary Meeting Scheduled']['Lead Project ID'])
@@ -58,7 +59,11 @@ def technician_page():
     client_info=client_info.iloc[0]
 
     st.subheader(f"Client: {client_info['Lead Name']}")
-
+    st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
+    st.write(f"📱Email: {client_info['Email']}")
+    st.write(f"🏠Address: {client_info['Address']}")
+    st.write(f"🕑Status: {client_info['Status']}")
+    st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
     # Upload documents
     uploaded_files = st.file_uploader("Upload Dimension Documents", accept_multiple_files=True)
     if st.button("Upload"):
