@@ -157,7 +157,7 @@ def admin_page():
         selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
         df_selected = df[selected_columns]
         st.dataframe(df_selected[df_selected['Status'] == 'Admin Uploads 5 Documents consolidated'])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Admin Uploads 5 Documents consolidated']))
+        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Admin Uploads 5 Documents consolidated']['Lead Project ID'])))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
         if client_id!="Please select":
             client_id=int(client_id)
@@ -180,7 +180,7 @@ def admin_page():
         selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
         df_selected = df[selected_columns]
         st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']))
+        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID'])))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
         if client_id!="Please select":
             client_id=int(client_id)
