@@ -117,7 +117,7 @@ def technician_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Preliminary Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df['Status'] == 'Preliminary Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Select"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
@@ -133,7 +133,7 @@ def technician_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Select"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
