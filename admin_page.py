@@ -7,6 +7,10 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import tempfile
+if 'document_to_delete' not in st.session_state:
+    st.session_state.document_to_delete = None
+if 'delete_confirmed' not in st.session_state:
+    st.session_state.delete_confirmed = False
 # from streamlit_modal import Modal
 # modal = Modal("Warning", )
 # Set up Google Sheets API
@@ -23,6 +27,8 @@ def load_data():
     data = leads_sheet.get_all_records()
     return pd.DataFrame(data)
 
+
+
 def update_pipeline(lead_id, column_name, value):
     workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
     pipeline_sheet = workbook.worksheet('Pipeline')
@@ -38,8 +44,19 @@ def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logs_sheet.append_row([lead_project_id, timestamp, sheet_name, column_name, action, old_value, new_value])
 
+def update_lead_status(lead_id, new_status):
+    lead_id=str(lead_id)
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    leads_sheet = workbook.worksheet('Leads from Anantya')
+    lead_row = leads_sheet.find(lead_id).row
+    old_status = leads_sheet.cell(lead_row, 6).value
+    leads_sheet.update_cell(lead_row, 6, new_status)
+    leads_sheet.update_cell(lead_row, 7, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    
+    # Log the change
+    log_action(lead_id, 'Leads from Anantya', 'Status',"Update", old_status, new_status)
+
 def upload_to_drive(uploaded_file):
-    # Save the uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         temp_file.write(uploaded_file.getbuffer())
         temp_file_path = temp_file.name
@@ -51,123 +68,124 @@ def upload_to_drive(uploaded_file):
     file_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
     return file_link
 
-def upload_5document(client_id):
+def update_document_link(client_id, column_name, file_link):
     df = load_data()
-    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
-    if st.button("Upload"):
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                file_link = upload_to_drive(uploaded_file)
-                st.success(f"Document uploaded successfully: {file_link}")
-                # Update the status in your database
-                workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-                leads_sheet = workbook.worksheet('Leads from Anantya')
-                pipeline_sheet = workbook.worksheet('Pipeline')
-                row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1, file_link)
-                log_action(client_id,"Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated","Document Uploaded", "0", "TRUE")
-
-def upload_PI(client_id):
-    df = load_data()
-    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
-    if st.button("Upload"):
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                file_link = upload_to_drive(uploaded_file)
-                st.success(f"Document uploaded successfully: {file_link}")
-                # Update the status in your database
-                workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-                leads_sheet = workbook.worksheet('Leads from Anantya')
-                pipeline_sheet = workbook.worksheet('Pipeline')
-                row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, file_link)
-                log_action(client_id,"Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('PI and Survey Sheet Documents uploaded by Technician?') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?","Document Uploaded", "0", "TRUE")
-
-def upload_Feedback(client_id):
-    df = load_data()
-    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
-    if st.button("Upload"):
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                file_link = upload_to_drive(uploaded_file)
-                st.success(f"Document uploaded successfully: {file_link}")
-                # Update the status in your database
-                workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-                leads_sheet = workbook.worksheet('Leads from Anantya')
-                pipeline_sheet = workbook.worksheet('Pipeline')
-                row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc("Survey Feedback") + 1, file_link)
-                log_action(client_id,"Leads from Anantya", "Survey Feedback","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('Survey Feedback') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "Survey Feedback","Document Uploaded", "0", "TRUE")
-
-# Function to show warning popup
-def show_warning(doc_name,client_id):
-    # st.session_state[f'delete_{doc_name}'] = True
-    df = load_data()
-    st.error("Do you really, really, wanna do this?")
-    st.button("Yes I'm ready")
-    if doc_name=="Document uploaded by Technician":
-        workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-        leads_sheet = workbook.worksheet('Leads from Anantya')
-        pipeline_sheet = workbook.worksheet('Pipeline')
-        row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-        # pipeline_sheet.update_cell(row_index,df.columns.get_loc("Document uploaded by Technician?") + 1,"0")
-        update_pipeline(client_id,"Document uploaded by Technician?","0")
-        log_action(client_id, "Pipeline", "Document uploaded by Technician?","Document Delete", "TRUE", "0")
-        leads_sheet.update_cell(row_index, df.columns.get_loc("Document uploaded by Technician") + 1, "")
-        log_action(client_id,"Leads from Anantya", "Document uploaded by Technician","Document Delete", "", "")
-        # modal.close()
-        st.write(f"Deleted {doc_name}")
-    elif doc_name=="Document Upload by Client":
-        workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-        leads_sheet = workbook.worksheet('Leads from Anantya')
-        pipeline_sheet = workbook.worksheet('Pipeline')
-        row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-        # pipeline_sheet.update_cell(row_index,df.columns.get_loc("Document Upload by Client") + 1,"False")
-        update_pipeline(client_id,"Document Upload by Client","0")
-        log_action(client_id, "Pipeline", "Document Upload by Client","Document Delete", "TRUE", "False")
-        leads_sheet.update_cell(row_index, df.columns.get_loc("Document Upload by Client") + 1, "")
-        log_action(client_id,"Leads from Anantya", "Document Upload by Client","Document Delete", "", "")
-        # modal.close()
-        st.write(f"Deleted {doc_name}")
-    elif doc_name=="Admin Uploads 5 Documents consolidated":
-        workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-        leads_sheet = workbook.worksheet('Leads from Anantya')
-        pipeline_sheet = workbook.worksheet('Pipeline')
-        row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-        leads_sheet.update_cell(row_index, df.columns.get_loc("Admin Uploads 5 Documents consolidated") + 1, "")
-        log_action(client_id,"Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Delete", "", "")
-        # pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"0")
-        update_pipeline(client_id,"Admin Uploads 5 Documents consolidated","0")
-        log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated","Document Delete", "TRUE", "0")
-        # modal.close()
-        st.write(f"Deleted {doc_name}")
-    elif doc_name=="PI and Survey Sheet Documents uploaded by Technician":
-        workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
-        leads_sheet = workbook.worksheet('Leads from Anantya')
-        pipeline_sheet = workbook.worksheet('Pipeline')
-        row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-        leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, "")
-        log_action(client_id,"Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician","Document Delete", "", "")
-        # pipeline_sheet.update_cell(row_index,df.columns.get_loc('PI and Survey Sheet Documents uploaded by Technician?') + 1,"0")
-        update_pipeline(client_id,"PI and Survey Sheet Documents uploaded by Technician?","0")
-        log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?","Document Delete", "TRUE", "0")
-        # modal.close()
-        st.write(f"Deleted {doc_name}")
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    leads_sheet = workbook.worksheet('Leads from Anantya')
+    pipeline_sheet = workbook.worksheet('Pipeline')
     
-                # Implement the deletion logic here
-            # del st.session_state[f'delete_{doc_name}']
-    # if st.button(f"Cancel Delete {doc_name}"):
-        # client_details(client_id)
-            # del st.session_state[f'delete_{doc_name}']
-        # st.write(f"Deleted {doc_name}")
-        # Implement the deletion logic here
-        
+    row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
+    leads_sheet.update_cell(row_index, df.columns.get_loc(column_name) + 1, file_link)
+    log_action(client_id, "Leads from Anantya", column_name, "Document Upload", "Pending", "Uploaded")
+    update_pipeline(client_id,column_name,"TRUE")
+    log_action(client_id, "Pipeline", column_name, "Document Uploaded", "0", "TRUE")
+    update_lead_status(client_id,column_name)
+    # pipeline_sheet.update_cell(row_index, df.columns.get_loc(column_name) + 1, "TRUE")
+    
+
+def upload_documents(column_name):
+    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
+    if 'uploaded_files' not in st.session_state:
+        st.session_state.uploaded_files = []
+
+    if uploaded_files:
+        st.session_state.uploaded_files.extend(uploaded_files)
+
+    if st.button("Upload"):
+        for uploaded_file in st.session_state.uploaded_files:
+            file_link = upload_to_drive(uploaded_file)
+            st.success(f"Document uploaded successfully: {file_link}")
+            update_document_link(st.session_state.selected_client_id, column_name, file_link)
+        st.session_state.uploaded_files = []  # Clear uploaded files after upload
+
+
+def handle_upload_quotation(df):
+    st.subheader("Pending Document Clients")
+    df_selected = df[['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status', "Last Contact"]]
+    pending_df = df_selected[(df_selected['Status'] == 'Document uploaded by Technician') | (df_selected['Status'] == 'Document Upload by Client')]
+    st.dataframe(pending_df)
+
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead Project ID']))
+
+    if client_id != "Please select":
+        st.session_state.selected_client_id = int(client_id)
+        # if st.button("Submit"):
+        client_details(st.session_state.selected_client_id)
+        st.subheader("Upload Documents")
+        upload_documents("Admin Uploads 5 Documents consolidated")
+
+def handle_schedule_call(df):
+    st.subheader("All Clients")
+    df_selected = df[['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status', "Last Contact"]]
+    st.dataframe(df_selected)
+
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead Project ID']))
+
+    if client_id != "Please select":
+        st.session_state.selected_client_id = int(client_id)
+        if st.button("Select"):
+            client_details(st.session_state.selected_client_id)
+
+def handle_upload_pi_survey_sheet(df):
+    st.subheader("Pending Document Clients")
+    df_selected = df[['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status', "Last Contact"]]
+    pending_df = df_selected[df_selected['Status'] == 'Final Meeting Scheduled']
+    st.dataframe(pending_df)
+
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead Project ID']))
+
+    if client_id != "Please select":
+        st.session_state.selected_client_id = int(client_id)
+        if st.button("Select"):
+            client_details(st.session_state.selected_client_id)
+            st.subheader("Upload Documents")
+            upload_documents("PI and Survey Sheet Documents uploaded by Technician")
+
+def handle_upload_survey_feedback(df):
+    st.subheader("Pending Document Clients")
+    df_selected = df[['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status', "Last Contact"]]
+    pending_df = df_selected[df_selected['Status'] == 'Order Delivered and Installation']
+    st.dataframe(pending_df)
+
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead Project ID']))
+
+    if client_id != "Please select":
+        st.session_state.selected_client_id = int(client_id)
+        if st.button("Select"):
+            client_details(st.session_state.selected_client_id)
+            st.subheader("Upload Documents")
+            upload_documents("Survey Feedback")
+
+def delete_document(doc_name, client_id):
+    df = load_data()
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    leads_sheet = workbook.worksheet('Leads from Anantya')
+    pipeline_sheet = workbook.worksheet('Pipeline')
+    row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
+
+    if doc_name == "Document uploaded by Technician":
+        update_pipeline(client_id, "Document uploaded by Technician?", "0")
+        log_action(client_id, "Pipeline", "Document uploaded by Technician?", "Document Delete", "TRUE", "0")
+        leads_sheet.update_cell(row_index, df.columns.get_loc("Document uploaded by Technician") + 1, "")
+        log_action(client_id, "Leads from Anantya", "Document uploaded by Technician", "Document Delete", "", "")
+    
+    elif doc_name == "Document Upload by Client":
+        update_pipeline(client_id, "Document Upload by Client", "0")
+        log_action(client_id, "Pipeline", "Document Upload by Client", "Document Delete", "TRUE", "False")
+        leads_sheet.update_cell(row_index, df.columns.get_loc("Document Upload by Client") + 1, "")
+        log_action(client_id, "Leads from Anantya", "Document Upload by Client", "Document Delete", "", "")
+    
+    elif doc_name == "Admin Uploads 5 Documents consolidated":
+        leads_sheet.update_cell(row_index, df.columns.get_loc("Admin Uploads 5 Documents consolidated") + 1, "")
+        log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated", "Document Delete", "", "")
+        update_pipeline(client_id, "Admin Uploads 5 Documents consolidated", "0")
+        log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated", "Document Delete", "TRUE", "0")
+    
+    elif doc_name == "PI and Survey Sheet Documents uploaded by Technician":
+        leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, "")
+        log_action(client_id, "Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician", "Document Delete", "", "")
+        update_pipeline(client_id, "PI and Survey Sheet Documents uploaded by Technician?", "0")
+        log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?", "Document Delete", "TRUE", "0")
 
 def client_details(client_id):
     st.title(f"Client Details")
@@ -195,31 +213,6 @@ def client_details(client_id):
             st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
             st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
             st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
-    # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
-    # st.write(f"Survey Feedback: {client_info['Survey Feedback']}")
-    # documents = [
-    #     {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
-    #     {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
-    #     {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
-    #     {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
-    # ]
-
-    # st.subheader("Documents")
-    # for doc in documents:
-    #     col1,col2,col3=st.columns([4, 2, 1])
-    #     with col1:
-    #         st.write(f"[{doc['name']}]({doc['link']})")
-    #     with col2:
-    #         if st.button("Delete", key=f"delete_{doc['name']}"):
-    #             show_warning(doc['name'],client_id)
-    #     with col3:
-    #         if st.button("Send", key=f"send_{doc['name']}"):
-    #             st.write(f"Sending {doc['name']}")
-            
-    # st.write(f"Notes: {client_info['Notes']}")
-
-    # # Upload documents
-    # st.subheader("Upload Documents")
 
 def show_delete_entity_page(df):
     st.title("Delete Entity")
@@ -228,7 +221,7 @@ def show_delete_entity_page(df):
     st.dataframe(df_selected)
     client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead Project ID']))
     
-    if client_id != "Please select" and st.button("Submit"):
+    if client_id != "Please select":
         client_info = df[df['Lead Project ID'] == client_id].iloc[0]
         with st.container():
             st.subheader(f"Client: {client_info['Lead Name']}")
@@ -257,71 +250,46 @@ def show_delete_entity_page(df):
             with col1:
                 st.write(f"[{doc['name']}]({doc['link']})")
             with col2:
-                if st.button("Delete", key=f"delete_{doc['name']}"):
-                    show_warning(doc['name'], client_id)
+                delete_placeholder = st.empty()
+                if delete_placeholder.button("Delete", key=f"delete_{doc['name']}"):
+                    st.session_state.document_to_delete = (doc['name'], client_id)
+                    st.session_state.delete_confirmation_shown = True
+                    st.session_state.confirmation_doc_name = doc['name']
             with col3:
                 if st.button("Send", key=f"send_{doc['name']}"):
                     st.write(f"Sending {doc['name']}")
 
+        # Handle document deletion confirmation
+        if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
+            doc_name, _ = st.session_state.document_to_delete
+            st.warning("Do you really, really want to delete this document?")
+            if st.button("Yes, I'm ready"):
+                # doc_name, client_id = st.session_state.document_to_delete
+                delete_document(doc_name, client_id)
+                st.success(f"Deleted {doc_name}")
+                st.session_state.delete_confirmation_shown = False
+                st.session_state.document_to_delete = None
+                st.experimental_rerun()  # Optional: Rerun to refresh the state
+            if st.button("Cancel"):
+                st.session_state.delete_confirmation_shown = False
+                st.session_state.document_to_delete = None
+
+
     if st.button("Back to Admin Page"):
         st.session_state.delete_entity_active = False
-        st.experimental_rerun()
+        st.rerun()
 
 def show_regular_admin_page(df):
-    page=st.sidebar.selectbox("Admin Task",["Upload Quotation","Schedule Call","Upload PI and Survey sheet","Upload Survey Feedback"])
-    if page=="Upload Quotation":
-        # Display all clients
-        st.subheader("Pending Document Clients")
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected[(df_selected['Status'] == 'Document uploaded by Technician') | (df_selected['Status'] == 'Document Upload by Client')])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[(df['Status'] == 'Document uploaded by Technician') | (df['Status'] == 'Document Upload by Client')]['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
-            client_id=int(client_id)
-            client_details(client_id)
-            # Upload documents
-            st.subheader("Upload Documents")
-            upload_5document(client_id)
-        # Select a client
-        # log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
-    elif page=="Schedule Call":
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected)
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
-            client_id=int(client_id)
-            client_details(client_id)
-    elif page=="Upload PI and Survey sheet":
-        # Display all clients
-        st.subheader("Pending Document Clients")
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
-            client_id=int(client_id)
-            client_details(client_id)
-            # Upload documents
-            st.subheader("Upload Documents")
-            upload_PI(client_id)
-    elif page=="Upload Survey Feedback":
-        # Display all clients
-        st.subheader("Pending Document Clients")
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected[df_selected['Status'] == 'Order Delivered and Installation'])
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Order Delivered and Installation']['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
-            client_id=int(client_id)
-            client_details(client_id)
-            # Upload documents
-            st.subheader("Upload Documents")
-            upload_Feedback(client_id)
+    page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback"])
+    
+    if page == "Upload Quotation":
+        handle_upload_quotation(df)
+    elif page == "Schedule Call":
+        handle_schedule_call(df)
+    elif page == "Upload PI and Survey sheet":
+        handle_upload_pi_survey_sheet(df)
+    elif page == "Upload Survey Feedback":
+        handle_upload_survey_feedback(df)
 
 def admin_page():
     st.header("Admin Page")
