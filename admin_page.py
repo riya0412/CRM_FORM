@@ -7,8 +7,8 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import tempfile
-# from streamlit_modal import Modal
-# modal = Modal("Warning", False)
+from streamlit_modal import Modal
+modal = Modal("Warning", False)
 # Set up Google Sheets API
 credentials = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
     # creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
@@ -22,6 +22,15 @@ def load_data():
     leads_sheet = workbook.worksheet('Leads from Anantya')   # Assuming the first sheet contains the leads
     data = leads_sheet.get_all_records()
     return pd.DataFrame(data)
+
+def update_pipeline(lead_id, column_name, value):
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    pipeline_sheet = workbook.worksheet('Pipeline')
+    lead_id=str(lead_id)
+    pipeline_row = pipeline_sheet.find(lead_id).row
+    column_index = pipeline_sheet.row_values(1).index(column_name) + 1
+    old_value = pipeline_sheet.cell(pipeline_row, column_index).value
+    pipeline_sheet.update_cell(pipeline_row, column_index, value)
 
 def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_value):
     workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
@@ -107,10 +116,11 @@ def show_warning(doc_name,client_id):
         leads_sheet = workbook.worksheet('Leads from Anantya')
         pipeline_sheet = workbook.worksheet('Pipeline')
         row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
+        # pipeline_sheet.update_cell(row_index,df.columns.get_loc("Document uploaded by Technician?") + 1,"0")
+        update_pipeline(client_id,"Document uploaded by Technician?","0")
+        log_action(client_id, "Pipeline", "Document uploaded by Technician?","Document Delete", "TRUE", "0")
         leads_sheet.update_cell(row_index, df.columns.get_loc("Document uploaded by Technician") + 1, "")
         log_action(client_id,"Leads from Anantya", "Document uploaded by Technician","Document Delete", "", "")
-        pipeline_sheet.update_cell(row_index,df.columns.get_loc('Document uploaded by Technician?') + 1,"0")
-        log_action(client_id, "Pipeline", "Document uploaded by Technician?","Document Delete", "TRUE", "0")
         # modal.close()
         st.write(f"Deleted {doc_name}")
     elif doc_name=="Document Upload by Client":
@@ -118,10 +128,11 @@ def show_warning(doc_name,client_id):
         leads_sheet = workbook.worksheet('Leads from Anantya')
         pipeline_sheet = workbook.worksheet('Pipeline')
         row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
+        # pipeline_sheet.update_cell(row_index,df.columns.get_loc("Document Upload by Client") + 1,"False")
+        update_pipeline(client_id,"Document Upload by Client","0")
+        log_action(client_id, "Pipeline", "Document Upload by Client","Document Delete", "TRUE", "False")
         leads_sheet.update_cell(row_index, df.columns.get_loc("Document Upload by Client") + 1, "")
         log_action(client_id,"Leads from Anantya", "Document Upload by Client","Document Delete", "", "")
-        pipeline_sheet.update_cell(row_index,df.columns.get_loc('Document Upload by Client') + 1,"False")
-        log_action(client_id, "Pipeline", "Document Upload by Client","Document Delete", "TRUE", "False")
         # modal.close()
         st.write(f"Deleted {doc_name}")
     elif doc_name=="Admin Uploads 5 Documents consolidated":
@@ -131,7 +142,8 @@ def show_warning(doc_name,client_id):
         row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
         leads_sheet.update_cell(row_index, df.columns.get_loc("Admin Uploads 5 Documents consolidated") + 1, "")
         log_action(client_id,"Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Delete", "", "")
-        pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"0")
+        # pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"0")
+        update_pipeline(client_id,"Admin Uploads 5 Documents consolidated","0")
         log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated","Document Delete", "TRUE", "0")
         # modal.close()
         st.write(f"Deleted {doc_name}")
@@ -142,7 +154,8 @@ def show_warning(doc_name,client_id):
         row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
         leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, "")
         log_action(client_id,"Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician","Document Delete", "", "")
-        pipeline_sheet.update_cell(row_index,df.columns.get_loc('PI and Survey Sheet Documents uploaded by Technician?') + 1,"0")
+        # pipeline_sheet.update_cell(row_index,df.columns.get_loc('PI and Survey Sheet Documents uploaded by Technician?') + 1,"0")
+        update_pipeline(client_id,"PI and Survey Sheet Documents uploaded by Technician?","0")
         log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?","Document Delete", "TRUE", "0")
         # modal.close()
         st.write(f"Deleted {doc_name}")
