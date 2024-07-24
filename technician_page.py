@@ -28,6 +28,26 @@ def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     logs_sheet.append_row([lead_project_id, timestamp, sheet_name, column_name, action, old_value, new_value])
 
+def update_lead_status(lead_id, new_status):
+    lead_id=str(lead_id)
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    leads_sheet = workbook.worksheet('Leads from Anantya')
+    lead_row = leads_sheet.find(lead_id).row
+    old_status = leads_sheet.cell(lead_row, 6).value
+    leads_sheet.update_cell(lead_row, 6, new_status)
+    leads_sheet.update_cell(lead_row, 7, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    
+    # Log the change
+    log_action(lead_id, 'Leads from Anantya', 'Status',"Update", old_status, new_status)
+def update_pipeline(lead_id, column_name, value):
+    workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
+    pipeline_sheet = workbook.worksheet('Pipeline')
+    lead_id=str(lead_id)
+    pipeline_row = pipeline_sheet.find(lead_id).row
+    column_index = pipeline_sheet.row_values(1).index(column_name) + 1
+    old_value = pipeline_sheet.cell(pipeline_row, column_index).value
+    pipeline_sheet.update_cell(pipeline_row, column_index, value)
+
 def upload_to_drive(uploaded_file):
     # Save the uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -41,7 +61,7 @@ def upload_to_drive(uploaded_file):
     file_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
     return file_link
 
-def upload_5document(client_id):
+def upload_document(client_id):
     df = load_data()
     uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
     if st.button("Upload"):
@@ -54,11 +74,12 @@ def upload_5document(client_id):
                 leads_sheet = workbook.worksheet('Leads from Anantya')
                 pipeline_sheet = workbook.worksheet('Pipeline')
                 row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
-                leads_sheet.update_cell(row_index, df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1, file_link)
-                log_action(client_id,"Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('Admin Uploads 5 Documents consolidated') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated","Document Uploaded", "0", "TRUE")
-
+                leads_sheet.update_cell(row_index, df.columns.get_loc('Document uploaded by Technician') + 1, file_link)
+                log_action(client_id,"Leads from Anantya", "Document uploaded by Technician","Document Upload", "Pending", "Uploaded")
+                # pipeline_sheet.update_cell(row_index,df.columns.get_loc('Document uploaded by Technician') + 1,"TRUE")
+                update_pipeline(client_id,"Document uploaded by Technician","TRUE")
+                log_action(client_id, "Pipeline", "Document uploaded by Technician", "Document Uploaded", "0", "TRUE")
+                update_lead_status(client_id,"Document uploaded by Technician")
 def upload_PI(client_id):
     df = load_data()
     uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True)
@@ -74,9 +95,9 @@ def upload_PI(client_id):
                 row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
                 leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, file_link)
                 log_action(client_id,"Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician","Document Upload", "Pending", "Uploaded")
-                pipeline_sheet.update_cell(row_index,df.columns.get_loc('PI and Survey Sheet Documents uploaded by Technician?') + 1,"TRUE")
-                log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?","Document Uploaded", "0", "TRUE")
-
+                update_pipeline(client_id,"PI and Survey Sheet Documents uploaded by Technician","TRUE")
+                log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician", "Document Uploaded", "0", "TRUE")
+                update_lead_status(client_id,"PI and Survey Sheet Documents uploaded by Technician")
 def client_details(client_id):
     st.title(f"Client Details")
 
@@ -117,12 +138,12 @@ def technician_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Preliminary Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df['Status'] == 'Preliminary Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
+        if client_id!="Please select":
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
             st.subheader("Upload Documents")
-            upload_5document(client_id)
+            upload_document(client_id)
         # Select a client
         # log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
     elif page=="Upload PI and Survey sheet":
@@ -133,7 +154,7 @@ def technician_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):
+        if client_id!="Please select":
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
