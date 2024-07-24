@@ -220,13 +220,54 @@ def client_details(client_id):
 
     # # Upload documents
     # st.subheader("Upload Documents")
-    
 
-def admin_page():
-    st.header("Admin Page")
+def show_delete_entity_page(df):
+    st.title("Delete Entity")
+    selected_columns = ['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status', "Last Contact"]
+    df_selected = df[selected_columns]
+    st.dataframe(df_selected)
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead Project ID']))
     
-    # Load the data
-    df = load_data()
+    if client_id != "Please select" and st.button("Submit"):
+        client_info = df[df['Lead Project ID'] == client_id].iloc[0]
+        with st.container():
+            st.subheader(f"Client: {client_info['Lead Name']}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
+                st.write(f"📱Email: {client_info['Email']}")
+                st.write(f"🏠Address: {client_info['Address']}")
+                st.write(f"🕑Status: {client_info['Status']}")
+            with col2:
+                st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
+                st.write(f"📆Last Contact: {client_info['Last Contact']}")
+                st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
+                st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
+
+        documents = [
+            {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
+            {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
+            {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
+            {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
+        ]
+
+        st.subheader("Documents")
+        for doc in documents:
+            col1, col2, col3 = st.columns([4, 2, 1])
+            with col1:
+                st.write(f"[{doc['name']}]({doc['link']})")
+            with col2:
+                if st.button("Delete", key=f"delete_{doc['name']}"):
+                    show_warning(doc['name'], client_id)
+            with col3:
+                if st.button("Send", key=f"send_{doc['name']}"):
+                    st.write(f"Sending {doc['name']}")
+
+    if st.button("Back to Admin Page"):
+        st.session_state.delete_entity_active = False
+        st.experimental_rerun()
+
+def show_regular_admin_page(df):
     page=st.sidebar.selectbox("Admin Task",["Upload Quotation","Schedule Call","Upload PI and Survey sheet","Upload Survey Feedback"])
     if page=="Upload Quotation":
         # Display all clients
@@ -250,7 +291,7 @@ def admin_page():
         st.dataframe(df_selected)
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Select"):
             client_id=int(client_id)
             client_details(client_id)
     elif page=="Upload PI and Survey sheet":
@@ -261,7 +302,7 @@ def admin_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Select"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
@@ -275,62 +316,29 @@ def admin_page():
         st.dataframe(df_selected[df_selected['Status'] == 'Order Delivered and Installation'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Order Delivered and Installation']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Select"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
             st.subheader("Upload Documents")
             upload_Feedback(client_id)
-    Delete_button = st.sidebar.button("Delete Entity")
-    if Delete_button:
-        st.title(f"Client Details")
-        # Load the data
-        df = load_data()
-        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
-        df_selected = df[selected_columns]
-        st.dataframe(df_selected)
-        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df['Lead Project ID']))
-        # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Submit"):        
-            client_info = df[df['Lead Project ID'] == client_id].iloc[0]
-            with st.container():
 
-                st.subheader(f"Client: {client_info['Lead Name']}")
-                col1,col2=st.columns(2)
+def admin_page():
+    st.header("Admin Page")
+    df = load_data()
 
-                with col1:
-                    st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
-                    st.write(f"📱Email: {client_info['Email']}")
-                    st.write(f"🏠Address: {client_info['Address']}")
-                    st.write(f"🕑Status: {client_info['Status']}")
-                    
-                with col2:
-                    st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
-                    st.write(f"📆Last Contact: {client_info['Last Contact']}")
-                    st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
-                    # st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
-                    # st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
-                    # st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
-                    st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
-                    # st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
-            # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
-            # st.write(f"Survey Feedback: {client_info['Survey Feedback']}")
-            documents = [
-                {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
-                {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
-                {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
-                {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
-            ]
+    # Create a state variable for the Delete Entity button
+    if 'delete_entity_active' not in st.session_state:
+        st.session_state.delete_entity_active = False
 
-            st.subheader("Documents")
-            for doc in documents:
-                col1,col2,col3=st.columns([4, 2, 1])
-                with col1:
-                    st.write(f"[{doc['name']}]({doc['link']})")
-                with col2:
-                    if st.button("Delete", key=f"delete_{doc['name']}"):
-                        show_warning(doc['name'],client_id)
-                with col3:
-                    if st.button("Send", key=f"send_{doc['name']}"):
-                        st.write(f"Sending {doc['name']}")
+    # Delete Entity button in sidebar
+    if st.sidebar.button("Delete Entity"):
+        st.session_state.delete_entity_active = True
+
+    # Check if Delete Entity is active
+    if st.session_state.delete_entity_active:
+        show_delete_entity_page(df)
+    else:
+        show_regular_admin_page(df)
+    
                     
