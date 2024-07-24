@@ -291,7 +291,7 @@ def show_regular_admin_page(df):
         st.dataframe(df_selected)
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Select"):
+        if client_id!="Please select" and st.button("Submit"):
             client_id=int(client_id)
             client_details(client_id)
     elif page=="Upload PI and Survey sheet":
@@ -302,7 +302,7 @@ def show_regular_admin_page(df):
         st.dataframe(df_selected[df_selected['Status'] == 'Final Meeting Scheduled'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Final Meeting Scheduled']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Select"):
+        if client_id!="Please select" and st.button("Submit"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
@@ -316,7 +316,7 @@ def show_regular_admin_page(df):
         st.dataframe(df_selected[df_selected['Status'] == 'Order Delivered and Installation'])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[df_selected['Status'] == 'Order Delivered and Installation']['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select" and st.button("Select"):
+        if client_id!="Please select" and st.button("Submit"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
