@@ -7,8 +7,8 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import tempfile
-from streamlit_modal import Modal
-modal = Modal("Warning", False)
+# from streamlit_modal import Modal
+# modal = Modal("Warning", False)
 # Set up Google Sheets API
 credentials = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
     # creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
