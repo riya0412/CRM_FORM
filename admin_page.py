@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 import tempfile
 # from streamlit_modal import Modal
-# modal = Modal("Warning", False)
+# modal = Modal("Warning", )
 # Set up Google Sheets API
 credentials = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
     # creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
@@ -185,36 +185,36 @@ def client_details(client_id):
             st.write(f"📱Email: {client_info['Email']}")
             st.write(f"🏠Address: {client_info['Address']}")
             st.write(f"🕑Status: {client_info['Status']}")
-            
-        with col2:
             st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
             st.write(f"📆Last Contact: {client_info['Last Contact']}")
             st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
-            # st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
-            # st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
-            # st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
+        with col2:
+            
+            st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
+            st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
+            st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
             st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
-            # st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
+            st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
     # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
     # st.write(f"Survey Feedback: {client_info['Survey Feedback']}")
-    documents = [
-        {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
-        {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
-        {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
-        {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
-    ]
+    # documents = [
+    #     {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
+    #     {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
+    #     {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
+    #     {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
+    # ]
 
-    st.subheader("Documents")
-    for doc in documents:
-        col1,col2,col3=st.columns([4, 2, 1])
-        with col1:
-            st.write(f"[{doc['name']}]({doc['link']})")
-        with col2:
-            if st.button("Delete", key=f"delete_{doc['name']}"):
-                show_warning(doc['name'],client_id)
-        with col3:
-            if st.button("Send", key=f"send_{doc['name']}"):
-                st.write(f"Sending {doc['name']}")
+    # st.subheader("Documents")
+    # for doc in documents:
+    #     col1,col2,col3=st.columns([4, 2, 1])
+    #     with col1:
+    #         st.write(f"[{doc['name']}]({doc['link']})")
+    #     with col2:
+    #         if st.button("Delete", key=f"delete_{doc['name']}"):
+    #             show_warning(doc['name'],client_id)
+    #     with col3:
+    #         if st.button("Send", key=f"send_{doc['name']}"):
+    #             st.write(f"Sending {doc['name']}")
             
     # st.write(f"Notes: {client_info['Notes']}")
 
@@ -224,7 +224,7 @@ def client_details(client_id):
 
 def admin_page():
     st.header("Admin Page")
-
+    
     # Load the data
     df = load_data()
     page=st.sidebar.selectbox("Admin Task",["Upload Quotation","Schedule Call","Upload PI and Survey sheet","Upload Survey Feedback"])
@@ -236,7 +236,7 @@ def admin_page():
         st.dataframe(df_selected[(df_selected['Status'] == 'Document uploaded by Technician') | (df_selected['Status'] == 'Document Upload by Client')])
         client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df[(df['Status'] == 'Document uploaded by Technician') | (df['Status'] == 'Document Upload by Client')]['Lead Project ID']))
         # client_id = st.sidebar.text_input("Enter Client ID", "")
-        if client_id!="Please select":
+        if client_id!="Please select" and st.button("Submit"):
             client_id=int(client_id)
             client_details(client_id)
             # Upload documents
@@ -281,3 +281,56 @@ def admin_page():
             # Upload documents
             st.subheader("Upload Documents")
             upload_Feedback(client_id)
+    Delete_button = st.sidebar.button("Delete Entity")
+    if Delete_button:
+        st.title(f"Client Details")
+        # Load the data
+        df = load_data()
+        selected_columns=['Lead Project ID', 'Lead Name', 'WhatsApp Number', 'Email', 'Address', 'Status',"Last Contact"]
+        df_selected = df[selected_columns]
+        st.dataframe(df_selected)
+        client_id = st.selectbox("Select Client ID", ["Please select"] +  list(df['Lead Project ID']))
+        # client_id = st.sidebar.text_input("Enter Client ID", "")
+        if client_id!="Please select" and st.button("Submit"):        
+            client_info = df[df['Lead Project ID'] == client_id].iloc[0]
+            with st.container():
+
+                st.subheader(f"Client: {client_info['Lead Name']}")
+                col1,col2=st.columns(2)
+
+                with col1:
+                    st.write(f"📱WhatsApp Number: +{client_info['WhatsApp Number']}")
+                    st.write(f"📱Email: {client_info['Email']}")
+                    st.write(f"🏠Address: {client_info['Address']}")
+                    st.write(f"🕑Status: {client_info['Status']}")
+                    
+                with col2:
+                    st.write(f"🕑Follow-Up Required?: {client_info['Follow-Up Required?']}")
+                    st.write(f"📆Last Contact: {client_info['Last Contact']}")
+                    st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary Meeting Scheduled Date']}")
+                    # st.write(f"📝Document uploaded by Technician: {client_info['Document uploaded by Technician']}")
+                    # st.write(f"📝Document Upload by Client: {client_info['Document Upload by Client']}")
+                    # st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin Uploads 5 Documents consolidated']}")
+                    st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
+                    # st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI and Survey Sheet Documents uploaded by Technician']}")
+            # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
+            # st.write(f"Survey Feedback: {client_info['Survey Feedback']}")
+            documents = [
+                {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
+                {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
+                {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
+                {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
+            ]
+
+            st.subheader("Documents")
+            for doc in documents:
+                col1,col2,col3=st.columns([4, 2, 1])
+                with col1:
+                    st.write(f"[{doc['name']}]({doc['link']})")
+                with col2:
+                    if st.button("Delete", key=f"delete_{doc['name']}"):
+                        show_warning(doc['name'],client_id)
+                with col3:
+                    if st.button("Send", key=f"send_{doc['name']}"):
+                        st.write(f"Sending {doc['name']}")
+                    
