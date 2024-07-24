@@ -11,8 +11,7 @@ if 'document_to_delete' not in st.session_state:
     st.session_state.document_to_delete = None
 if 'delete_confirmed' not in st.session_state:
     st.session_state.delete_confirmed = False
-# from streamlit_modal import Modal
-# modal = Modal("Warning", )
+
 # Set up Google Sheets API
 credentials = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
     # creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
@@ -158,34 +157,42 @@ def handle_upload_survey_feedback(df):
 
 def delete_document(doc_name, client_id):
     df = load_data()
+    client_info = df[df['Lead Project ID'] == client_id].iloc[0]
     workbook = client.open_by_key("1pcmMrkUfhvUn3QvyZ2L0IXDOV4C16SAKNdr85xy2gps")
     leads_sheet = workbook.worksheet('Leads from Anantya')
     pipeline_sheet = workbook.worksheet('Pipeline')
     row_index = df[df['Lead Project ID'] == client_id].index[0] + 2  # Adjust for 0-indexing and header row
 
     if doc_name == "Document uploaded by Technician":
-        update_pipeline(client_id, "Document uploaded by Technician?", "0")
-        log_action(client_id, "Pipeline", "Document uploaded by Technician?", "Document Delete", "TRUE", "0")
+        update_pipeline(client_id, "Document uploaded by Technician", "0")
+        log_action(client_id, "Pipeline", "Document uploaded by Technician", "Document Delete", "TRUE", "0")
         leads_sheet.update_cell(row_index, df.columns.get_loc("Document uploaded by Technician") + 1, "")
         log_action(client_id, "Leads from Anantya", "Document uploaded by Technician", "Document Delete", "", "")
+        update_lead_status(client_id,"Preliminary Meeting Scheduled")
     
     elif doc_name == "Document Upload by Client":
         update_pipeline(client_id, "Document Upload by Client", "0")
         log_action(client_id, "Pipeline", "Document Upload by Client", "Document Delete", "TRUE", "False")
         leads_sheet.update_cell(row_index, df.columns.get_loc("Document Upload by Client") + 1, "")
         log_action(client_id, "Leads from Anantya", "Document Upload by Client", "Document Delete", "", "")
+        update_lead_status(client_id,"Get Quote")
     
     elif doc_name == "Admin Uploads 5 Documents consolidated":
         leads_sheet.update_cell(row_index, df.columns.get_loc("Admin Uploads 5 Documents consolidated") + 1, "")
         log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated", "Document Delete", "", "")
         update_pipeline(client_id, "Admin Uploads 5 Documents consolidated", "0")
         log_action(client_id, "Pipeline", "Admin Uploads 5 Documents consolidated", "Document Delete", "TRUE", "0")
+        if client_info["Document uploaded by Technician"] != "":
+            update_lead_status(client_id, "Document uploaded by Technician")
+        elif client_info["Document Upload by Client"] != "":
+            update_lead_status(client_id, "Document Upload by Client")
     
     elif doc_name == "PI and Survey Sheet Documents uploaded by Technician":
         leads_sheet.update_cell(row_index, df.columns.get_loc("PI and Survey Sheet Documents uploaded by Technician") + 1, "")
         log_action(client_id, "Leads from Anantya", "PI and Survey Sheet Documents uploaded by Technician", "Document Delete", "", "")
-        update_pipeline(client_id, "PI and Survey Sheet Documents uploaded by Technician?", "0")
-        log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician?", "Document Delete", "TRUE", "0")
+        update_pipeline(client_id, "PI and Survey Sheet Documents uploaded by Technician", "0")
+        log_action(client_id, "Pipeline", "PI and Survey Sheet Documents uploaded by Technician", "Document Delete", "TRUE", "0")
+        update_lead_status(client_id,"Final Meeting Scheduled")
 
 def client_details(client_id):
     st.title(f"Client Details")
@@ -259,6 +266,7 @@ def show_delete_entity_page(df):
                 with col3:
                     if st.button("Send", key=f"send_{doc['name']}"):
                         st.write(f"Sending {doc['name']}")
+
         # Handle document deletion confirmation
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
             doc_name, _ = st.session_state.document_to_delete
