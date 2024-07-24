@@ -238,27 +238,27 @@ def show_delete_entity_page(df):
                 st.write(f"📆Final Meeting Scheduled Date: {client_info['Final Meeting Scheduled Date']}")
 
         documents = [
-            {"name": "Document uploaded by Technician", "link": {client_info['Document uploaded by Technician']}},
-            {"name": "Document Upload by Client", "link": {client_info['Document Upload by Client']}},
-            {"name": "Admin Uploads 5 Documents consolidated", "link": {client_info['Admin Uploads 5 Documents consolidated']}},
-            {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": {client_info['PI and Survey Sheet Documents uploaded by Technician']}}
+            {"name": "Document uploaded by Technician", "link": client_info.get('Document uploaded by Technician')},
+            {"name": "Document Upload by Client", "link": client_info.get('Document Upload by Client')},
+            {"name": "Admin Uploads 5 Documents consolidated", "link": client_info.get('Admin Uploads 5 Documents consolidated')},
+            {"name": "PI and Survey Sheet Documents uploaded by Technician", "link": client_info.get('PI and Survey Sheet Documents uploaded by Technician')}
         ]
 
         st.subheader("Documents")
         for doc in documents:
-            col1, col2, col3 = st.columns([4, 2, 1])
-            with col1:
-                st.write(f"[{doc['name']}]({doc['link']})")
-            with col2:
-                delete_placeholder = st.empty()
-                if delete_placeholder.button("Delete", key=f"delete_{doc['name']}"):
-                    st.session_state.document_to_delete = (doc['name'], client_id)
-                    st.session_state.delete_confirmation_shown = True
-                    st.session_state.confirmation_doc_name = doc['name']
-            with col3:
-                if st.button("Send", key=f"send_{doc['name']}"):
-                    st.write(f"Sending {doc['name']}")
-
+            if doc["link"]!="":
+                col1, col2, col3 = st.columns([4, 2, 1])
+                with col1:
+                    st.write(f"[{doc['name']}]({doc['link']})")
+                with col2:
+                    delete_placeholder = st.empty()
+                    if delete_placeholder.button("Delete", key=f"delete_{doc['name']}"):
+                        st.session_state.document_to_delete = (doc['name'], client_id)
+                        st.session_state.delete_confirmation_shown = True
+                        st.session_state.confirmation_doc_name = doc['name']
+                with col3:
+                    if st.button("Send", key=f"send_{doc['name']}"):
+                        st.write(f"Sending {doc['name']}")
         # Handle document deletion confirmation
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
             doc_name, _ = st.session_state.document_to_delete
