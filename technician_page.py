@@ -147,12 +147,19 @@ def client_details(client_id):
             st.write(f"📆Last Contact: {client_info['Last_Contact']}")
             st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary_Meeting_Scheduled_Date']}")
         with col2:
-            
-            st.write(f"📝Document uploaded by Technician: {client_info['Document_uploaded_by_Technician']}")
-            st.write(f"📝Document Upload by Client: {client_info['Document_Upload_by_Client']}")
-            st.write(f"📝Admin Uploads 5 Documents consolidated: {client_info['Admin_Uploads_5_Documents_consolidated']}")
-            st.write(f"📆Final Meeting Scheduled Date: {client_info['Final_Meeting_Scheduled_Date']}")
-            st.write(f"📝PI and Survey Sheet Documents uploaded by Technician: {client_info['PI_and_Survey_Sheet_Documents_uploaded_by_Technician']}")
+            document_fields = [
+                ("Document uploaded by Technician", "Document_uploaded_by_Technician"),
+                ("Document Upload by Client", "Document_Upload_by_Client"),
+                ("Admin Uploads 5 Documents consolidated", "Admin_Uploads_5_Documents_consolidated"),
+                ("PI and Survey Sheet Documents uploaded by Technician", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician")
+            ]
+
+            for doc_label, doc_field in document_fields:
+                if client_info[doc_field]:
+                    if client_info[doc_field].startswith('http'):
+                        st.write(f"📝{doc_label}: {client_info[doc_field]} [View]({client_info[doc_field]})")
+                    else:
+                        st.write(f"📝{doc_label}: <a href='https://ftp-file.streamlit.app/?file_path={client_info[doc_field]}' target='_blank'>View</a>", unsafe_allow_html=True)
 
 def technician_page():
     st.header("Technician Page")
