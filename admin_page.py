@@ -375,17 +375,21 @@ def show_delete_entity_page(df):
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
             doc_name, client_id = st.session_state.document_to_delete
             st.warning("Do you really, really want to delete this document?")
-            if st.button("Yes, I'm ready"):
-                # doc_name, client_id = st.session_state.document_to_delete
-                delete_document(doc_name, client_id)
-                st.success(f"Deleted {doc_name}")
-                st.session_state.delete_confirmation_shown = False
-                st.session_state.document_to_delete = None
-                st.experimental_rerun()  # Optional: Rerun to refresh the state
-            if st.button("Cancel"):
-                st.session_state.delete_confirmation_shown = False
-                st.session_state.document_to_delete = None
-
+            col1, col2 = st.columns(2)
+    
+            with col1:
+                if st.button("Yes, I'm ready"):
+                    delete_document(doc_name, client_id)
+                    st.success(f"Deleted {doc_name}")
+                    st.session_state.delete_confirmation_shown = False
+                    st.session_state.document_to_delete = None
+                    st.experimental_rerun()
+            
+            with col2:
+                if st.button("Cancel"):
+                    st.session_state.delete_confirmation_shown = False
+                    st.session_state.document_to_delete = None
+                    st.experimental_rerun()
 
     if st.button("Back to Admin Page"):
         st.session_state.delete_entity_active = False
