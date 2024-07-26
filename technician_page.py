@@ -83,12 +83,13 @@ def update_document_link(client_id, column_name, file_link):
     # Update document link in leads table
     query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
-    
+    # Log document upload
+    log_action(client_id, "Leads", column_name, "Update", "", file_link)
     # Update pipeline table
     update_pipeline(client_id, column_name, "TRUE")
     
     # Log document upload
-    log_action(client_id, "Leads", column_name, "Update", "", file_link)
+    log_action(client_id, "Pipeline", column_name, "Update", "", "TRUE")
     
     conn.commit()
     cursor.close()
@@ -107,7 +108,7 @@ def upload_document(client_id):
                 file_link =  upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
                 # Update the status in your database
                 update_document_link(client_id, "Document_uploaded_by_Technician", file_link)
-                update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
+                update_lead_status(client_id, "Document uploaded by Technician")
                 st.success(f"Document uploaded successfully: {file_link}")
                 
 def upload_PI(client_id):
@@ -123,7 +124,7 @@ def upload_PI(client_id):
                 file_link =  upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
                 # Update the status in your database
                 update_document_link(client_id, "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", file_link)
-                update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
+                update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
                 st.success(f"Document uploaded successfully: {file_link}")
 
 def client_details(client_id):

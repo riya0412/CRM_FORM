@@ -88,12 +88,13 @@ def update_document_link(client_id, column_name, file_link):
     # Update document link in leads table
     query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
-    
+    # Log document upload
+    log_action(client_id, "Leads", column_name, "Update", "", file_link)
     # Update pipeline table
     update_pipeline(client_id, column_name, "TRUE")
     
     # Log document upload
-    log_action(client_id, "Leads", column_name, "Update", "", file_link)
+    log_action(client_id, "Pipeline", column_name, "Update", "", "TRUE")
     
     conn.commit()
     cursor.close()
