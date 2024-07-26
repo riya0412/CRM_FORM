@@ -29,8 +29,10 @@ def display_pdf(file_path):
         
         # Embed PDF in Streamlit using an iframe
         pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="1000" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+        pdf_display = f"""
+        <embed src="data:application/pdf;base64,{pdf_base64}" type="application/pdf" width="700" height="1000">
+        """
+        st.components.v1.html(pdf_display, height=1000)
 
 # Main Streamlit app
 st.title("FTP File Viewer")
