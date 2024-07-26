@@ -6,7 +6,7 @@ from urllib.parse import unquote
 import os
 
 def download_file_from_ftp(file_path):
-    creds=st.secrets[ftp]
+    creds=st.secrets["ftp"]
     ftp_host = creds["host"]
     ftp_user = creds["user"]
     ftp_password = creds["password"]
