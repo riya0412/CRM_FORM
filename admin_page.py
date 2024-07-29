@@ -74,7 +74,7 @@ def upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory):
             ftp.cwd(ftp_directory)
             with open(temp_file_path, 'rb') as file:
                 ftp.storbinary(f'STOR {filename}', file)
-            ftp_link = f'ftp://{ftp_host}{ftp_directory}/{filename}'
+            ftp_link = f'{ftp_directory}/{filename}'
             print(f"File '{filename}' uploaded successfully. Link: {ftp_link}")
         except Exception as e:
             print(f"Failed to upload file: {e}")
@@ -114,8 +114,9 @@ def upload_documents(column_name, ftp_host, ftp_user, ftp_pass, ftp_directory):
             file_link = upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
             st.success(f"Document uploaded successfully: {file_link}")
             update_document_link(st.session_state.selected_client_id, column_name, file_link)
-            update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
+            
         st.session_state.uploaded_files = []
+        st.rerun()
 
 # Display client details
 def client_details(client_id):
@@ -171,6 +172,7 @@ def handle_upload_quotation(df):
         st.subheader("Upload Documents")
         upload_documents("Admin_Uploads_5_Documents_consolidated", ftp_host, ftp_user, ftp_pass, ftp_directory)
         # update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
+        update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
 
 def handle_schedule_call(df):
     st.subheader("All Clients")
@@ -200,11 +202,10 @@ def handle_upload_pi_survey_sheet(df):
 
     if client_id != "Please select":
         st.session_state.selected_client_id = int(client_id)
-        if st.button("Select"):
-            client_details(st.session_state.selected_client_id)
-            st.subheader("Upload Documents")
-            upload_documents("PI_and_Survey_Sheet_Documents_uploaded_by_Technician", ftp_host, ftp_user, ftp_pass, ftp_directory)
-            update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
+        client_details(st.session_state.selected_client_id)
+        st.subheader("Upload Documents")
+        upload_documents("PI_and_Survey_Sheet_Documents_uploaded_by_Technician", ftp_host, ftp_user, ftp_pass, ftp_directory)
+        update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
 
 def handle_upload_survey_feedback(df):
     st.subheader("Pending Document Clients")
@@ -219,11 +220,10 @@ def handle_upload_survey_feedback(df):
 
     if client_id != "Please select":
         st.session_state.selected_client_id = int(client_id)
-        if st.button("Select"):
-            client_details(st.session_state.selected_client_id)
-            st.subheader("Upload Documents")
-            upload_documents("Survey_Feedback", ftp_host, ftp_user, ftp_pass, ftp_directory)
-            update_lead_status(client_id, "Survey Feedback")
+        client_details(st.session_state.selected_client_id)
+        st.subheader("Upload Documents")
+        upload_documents("Survey_Feedback", ftp_host, ftp_user, ftp_pass, ftp_directory)
+        update_lead_status(client_id, "Survey Feedback")
 
 def delete_document(doc_name, client_id):
     conn = get_db_connection()
@@ -274,6 +274,7 @@ def delete_document(doc_name, client_id):
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
+        conn.commit()
         log_action(client_id, "Leads", "Admin_Uploads_5_Documents_consolidated", "Delete", link[0], "")
         cursor.execute("""
         SELECT "Document_uploaded_by_Technician", "Document_Upload_by_Client"
@@ -302,6 +303,7 @@ def delete_document(doc_name, client_id):
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
+        conn.commit()
         log_action(client_id, "Leads", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", "Delete", link[0], "")
         update_lead_status(client_id, "Final Meeting Scheduled")
     
@@ -317,6 +319,7 @@ def delete_document(doc_name, client_id):
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
+        conn.commit()
         log_action(client_id, "Leads", "Survey_Feedback", "Delete", link[0], "")
         update_lead_status(client_id, "Order Delivered and Installation")
     
@@ -325,7 +328,7 @@ def delete_document(doc_name, client_id):
     # conn.close()
 
 def show_delete_entity_page(df):
-    st.title("Delete Entity")
+    st.title("Verify Uploaded Documents")
     selected_columns = ['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', "Last_Contact"]
     df_selected = df[selected_columns]
     st.dataframe(df_selected)
@@ -383,20 +386,36 @@ def show_delete_entity_page(df):
                     st.success(f"Deleted {doc_name}")
                     st.session_state.delete_confirmation_shown = False
                     st.session_state.document_to_delete = None
-                    st.experimental_rerun()
+                    st.rerun()
             
             with col2:
                 if st.button("Cancel"):
                     st.session_state.delete_confirmation_shown = False
                     st.session_state.document_to_delete = None
-                    st.experimental_rerun()
+                    st.rerun()
 
-    if st.button("Back to Admin Page"):
-        st.session_state.delete_entity_active = False
-        st.rerun()
 
-def show_regular_admin_page(df):
-    page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback"])
+    # if st.button("Back to Admin Page"):
+    #     st.session_state.delete_entity_active = False
+    #     st.rerun()
+
+# def show_regular_admin_page(df):
+#     page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback"])
+    
+#     if page == "Upload Quotation":
+#         handle_upload_quotation(df)
+#     elif page == "Schedule Call":
+#         handle_schedule_call(df)
+#     elif page == "Upload PI and Survey sheet":
+#         handle_upload_pi_survey_sheet(df)
+#     elif page == "Upload Survey Feedback":
+#         handle_upload_survey_feedback(df)
+
+def admin_page():
+    st.header("Admin Page")
+    df = load_data()
+
+    page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback","Verify Uploaded Documents"])
     
     if page == "Upload Quotation":
         handle_upload_quotation(df)
@@ -406,24 +425,21 @@ def show_regular_admin_page(df):
         handle_upload_pi_survey_sheet(df)
     elif page == "Upload Survey Feedback":
         handle_upload_survey_feedback(df)
-
-def admin_page():
-    st.header("Admin Page")
-    df = load_data()
-
+    elif page=="Verify Uploaded Documents":
+        show_delete_entity_page(df)
     # Create a state variable for the Delete Entity button
-    if 'delete_entity_active' not in st.session_state:
-        st.session_state.delete_entity_active = False
+    # if 'delete_entity_active' not in st.session_state:
+    #     st.session_state.delete_entity_active = False
 
-    # Delete Entity button in sidebar
-    if st.sidebar.button("Delete Entity"):
-        st.session_state.delete_entity_active = True
+    # # Delete Entity button in sidebar
+    # if st.sidebar.button("Delete Entity"):
+    #     st.session_state.delete_entity_active = True
 
     # Check if Delete Entity is active
-    if st.session_state.delete_entity_active:
-        show_delete_entity_page(df)
-    else:
-        show_regular_admin_page(df)
+    # if st.session_state.delete_entity_active:
+    #     show_delete_entity_page(df)
+    # else:
+    #     show_regular_admin_page(df)
 
 # if __name__ == "__main__":
     # main()
