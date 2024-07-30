@@ -150,7 +150,7 @@ def plot_client_flow(df, client_id):
         showlegend=False,
         height=dynamic_height,
         width=300,  # Set a fixed width for the graph
-        margin=dict(l=5, r=5, t=30, b=5)
+        margin=dict(l=20, r=20, t=40, b=20)
     )
     return fig
 
