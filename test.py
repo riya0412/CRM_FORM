@@ -189,7 +189,7 @@ def dashboard():
                     with st.container():
                         st.markdown('<div class="centered">', unsafe_allow_html=True)
                         fig = plot_client_flow(logs_df, client_id)
-                        st.plotly_chart(fig, use_container_width=False)
+                        st.plotly_chart(fig)
                         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error("Failed to load data from the database.")
