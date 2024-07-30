@@ -167,30 +167,30 @@ def dashboard():
         st.dataframe(df_selected)
         client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead_Project_ID']))
 
-        if client_id:
-            client_details(client_id)
-            # Left column: Client flow diagram
-            st.header("Client Flow")
-            # Create a centered container for the graph
-            center_container = st.container()
-            with center_container:
-                st.markdown(
-                    """
-                    <style>
-                    .centered {
-                        display: flex;
-                        justify-content: center;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
-                with st.container():
-                    st.markdown('<div class="centered">', unsafe_allow_html=True)
-                    fig = plot_client_flow(logs_df, client_id)
-                    st.plotly_chart(fig, use_container_width=False)
-                    st.markdown('</div>', unsafe_allow_html=True)
-
+        if client_id != "Please select":
+            if st.button("Select"):
+                client_details(client_id)
+                # Left column: Client flow diagram
+                st.header("Client Flow")
+                # Create a centered container for the graph
+                center_container = st.container()
+                with center_container:
+                    st.markdown(
+                        """
+                        <style>
+                        .centered {
+                            display: flex;
+                            justify-content: center;
+                        }
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    with st.container():
+                        st.markdown('<div class="centered">', unsafe_allow_html=True)
+                        fig = plot_client_flow(logs_df, client_id)
+                        st.plotly_chart(fig, use_container_width=False)
+                        st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error("Failed to load data from the database.")
 # dashboard()
