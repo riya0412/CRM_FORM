@@ -130,7 +130,7 @@ def plot_client_flow(df, client_id):
             text=f"{stages[i]}<br>Value: {values[i]}<br>{timestamps[i]}<br>{action[i]}",
             mode='markers+text',
             textposition="middle right",
-            marker=dict(size=15, color='blue')  # Reduced marker size
+            marker=dict(size=20, color='blue')  # Reduced marker size
         ))
 
         if i > 0:
@@ -141,7 +141,7 @@ def plot_client_flow(df, client_id):
                 line=dict(color="RoyalBlue", width=2)
             )
 
-    dynamic_height = max(len(stages) * 80, 400)  # Adjust the multiplier as needed
+    dynamic_height = max(len(stages) * 100, 400)  # Adjust the multiplier as needed
 
     fig.update_layout(
         title=f"Client Flow for Client ID: {client_id}",
@@ -149,7 +149,7 @@ def plot_client_flow(df, client_id):
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         showlegend=False,
         height=dynamic_height,
-        width=300,  # Set a fixed width for the graph
+        # width=300,  # Set a fixed width for the graph
         margin=dict(l=20, r=20, t=40, b=20)
     )
     return fig
