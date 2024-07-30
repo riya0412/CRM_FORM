@@ -130,7 +130,7 @@ def plot_client_flow(df, client_id):
             text=f"{stages[i]}<br>Value: {values[i]}<br>{timestamps[i]}<br>{action[i]}",
             mode='markers+text',
             textposition="middle right",
-            marker=dict(size=20, color='blue')
+            marker=dict(size=15, color='blue')  # Reduced marker size
         ))
 
         if i > 0:
@@ -141,7 +141,7 @@ def plot_client_flow(df, client_id):
                 line=dict(color="RoyalBlue", width=2)
             )
 
-    dynamic_height = len(stages) * 100
+    dynamic_height = max(len(stages) * 80, 400)  # Adjust the multiplier as needed
 
     fig.update_layout(
         title=f"Client Flow for Client ID: {client_id}",
@@ -149,43 +149,48 @@ def plot_client_flow(df, client_id):
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         showlegend=False,
         height=dynamic_height,
-        margin=dict(l=20, r=20, t=40, b=20)
+        width=300,  # Set a fixed width for the graph
+        margin=dict(l=5, r=5, t=30, b=5)
     )
-    st.plotly_chart(fig)
+    return fig
 
     
-# st.title("Client Flow Dashboard")
-
-# # Assuming the DataFrame df is already loaded from the database
-# df = load_logs()
-# client_ids = df['Primary_Key'].unique()
-# client_id = st.selectbox("Select Client ID", client_ids)
-
-# if client_id:
-#     plot_client_flow(df, client_id)
-
 
 def dashboard():
     st.title("Client Flow Dashboard")
 
     logs_df = load_logs()
-    df=load_data()
+    df = load_data()
     if df is not None:
-        # client_ids = df['Primary_Key'].unique()
+        st.subheader("All Clients")
+        df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
+        st.dataframe(df_selected)
         client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead_Project_ID']))
 
         if client_id:
-            col1, col2 = st.columns([3, 1])
-
+            client_details(client_id)
             # Left column: Client flow diagram
-            with col1:
-                st.header("Client Flow")
-                plot_client_flow(logs_df, client_id)
+            st.header("Client Flow")
+            # Create a centered container for the graph
+            center_container = st.container()
+            with center_container:
+                st.markdown(
+                    """
+                    <style>
+                    .centered {
+                        display: flex;
+                        justify-content: center;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                with st.container():
+                    st.markdown('<div class="centered">', unsafe_allow_html=True)
+                    fig = plot_client_flow(logs_df, client_id)
+                    st.plotly_chart(fig, use_container_width=False)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-            # Right column: Client details
-            with col2:
-                st.header("Client Details")
-                client_details(client_id)
     else:
         st.error("Failed to load data from the database.")
 # dashboard()
