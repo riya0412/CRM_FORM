@@ -1,0 +1,191 @@
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+import mysql.connector
+from mysql.connector import Error
+import re
+
+def load_logs():
+    try:
+        # Replace with your database connection details
+        connection = mysql.connector.connect(
+            host="srv1021.hstgr.io",
+            user="u627331871_Crmfile",
+            password="Crmfile@1234",
+            database="u627331871_Crmfile"
+        )
+
+        if connection.is_connected():
+            query = "SELECT * FROM Logs"
+            df = pd.read_sql(query, connection)
+            return df
+
+    except Error as e:
+        st.error(f"Error: {e}")
+    finally:
+        if connection.is_connected():
+            connection.close()
+
+# Initialize MySQL connection
+def get_db_connection():
+    return mysql.connector.connect(
+        host="srv1021.hstgr.io",
+        user="u627331871_Crmfile",
+        password="Crmfile@1234",
+        database="u627331871_Crmfile"
+    )
+
+# Load data from MySQL
+def load_data():
+    conn = get_db_connection()
+    query = "SELECT * FROM Leads"
+    df = pd.read_sql(query, conn)
+    conn.close()
+    return df
+
+# Display client details
+def client_details(client_id):
+    st.title(f"Client Details")
+
+    # Load the data
+    df = load_data()
+    client_info = df[df['Lead_Project_ID'] == client_id].iloc[0]
+    with st.container():
+
+        st.subheader(f"Client: {client_info['Lead_Name']}")
+        col1,col2=st.columns(2)
+
+        with col1:
+            st.write(f"📱WhatsApp Number: +{client_info['WhatsApp_Number']}")
+            st.write(f"📱Email: {client_info['Email']}")
+            st.write(f"🏠Address: {client_info['Address']}")
+            st.write(f"🕑Status: {client_info['Status']}")
+            st.write(f"🕑Follow-Up Required?: {client_info['Follow_Up_Required']}")
+            st.write(f"📆Last Contact: {client_info['Last_Contact']}")
+            st.write(f"📆Preliminary Meeting Scheduled Date: {client_info['Preliminary_Meeting_Scheduled_Date']}")
+        with col2:
+            document_fields = [
+                ("Document uploaded by Technician", "Document_uploaded_by_Technician"),
+                ("Document Upload by Client", "Document_Upload_by_Client"),
+                ("Admin Uploads 5 Documents consolidated", "Admin_Uploads_5_Documents_consolidated"),
+                ("PI and Survey Sheet Documents uploaded by Technician", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician")
+            ]
+
+            for doc_label, doc_field in document_fields:
+                if client_info[doc_field]:
+                    if client_info[doc_field].startswith('http'):
+                        st.write(f"📝{doc_label}: {client_info[doc_field]} [View]({client_info[doc_field]})")
+                    else:
+                        st.write(f"📝{doc_label}: <a href='https://ftp-file.streamlit.app/?file_path={client_info[doc_field]}' target='_blank'>View</a>", unsafe_allow_html=True)
+    # st.write(f"Gratitude Message: {client_info['Gratitude Message']}")
+
+def preprocess_column_name(name):
+    # Remove any extra characters like '?' and trim whitespace
+    return re.sub(r'[^\w\s]', '', name).strip().lower()
+
+def find_matching_value(stage, leads_data):
+    # Preprocess the stage name
+    cleaned_stage = preprocess_column_name(stage)
+    
+    for _, row in leads_data.iterrows():
+        # Preprocess the column name from leads data
+        cleaned_column_name = preprocess_column_name(row['Column_Name'])
+        # Check if the cleaned stage name is a substring of the cleaned column name
+        if cleaned_stage in cleaned_column_name:
+            return row['New_Value']
+    return "No value found"
+
+# Function to plot client flow
+def plot_client_flow(df, client_id):
+    # Filter data for the given client
+    pipeline_data = df[(df['Primary_Key'] == client_id) & (df['Sheet_Name'] == 'Pipeline') & (df['Column_Name'] != 'Status')]
+    leads_data = df[(df['Primary_Key'] == client_id) & (df['Sheet_Name'] == 'Leads from Anantya') & (df['Column_Name'] != 'Status')]
+
+    stages = []
+    values = []
+    timestamps = []
+    action=[]
+
+    for _, row in pipeline_data.iterrows():
+        stage = row['Column_Name']
+        stages.append(stage)
+        timestamps.append(row['Timestamp'])
+        action.append(row["Action"])
+
+        # Find the corresponding value from leads_data
+        value = find_matching_value(stage, leads_data)
+        values.append(value)
+
+    if not stages:
+        st.warning(f"No stages found for Client ID: {client_id}")
+        return
+
+    fig = go.Figure()
+    y_positions = list(range(len(stages), 0, -1))
+
+    for i in range(len(stages)):
+        fig.add_trace(go.Scatter(
+            x=[0],
+            y=[y_positions[i]],
+            text=f"{stages[i]}<br>Value: {values[i]}<br>{timestamps[i]}<br>{action[i]}",
+            mode='markers+text',
+            textposition="middle right",
+            marker=dict(size=20, color='blue')
+        ))
+
+        if i > 0:
+            fig.add_shape(
+                type="line",
+                x0=0, y0=y_positions[i-1],
+                x1=0, y1=y_positions[i],
+                line=dict(color="RoyalBlue", width=2)
+            )
+
+    dynamic_height = len(stages) * 100
+
+    fig.update_layout(
+        title=f"Client Flow for Client ID: {client_id}",
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        showlegend=False,
+        height=dynamic_height,
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+    st.plotly_chart(fig)
+
+    
+# st.title("Client Flow Dashboard")
+
+# # Assuming the DataFrame df is already loaded from the database
+# df = load_logs()
+# client_ids = df['Primary_Key'].unique()
+# client_id = st.selectbox("Select Client ID", client_ids)
+
+# if client_id:
+#     plot_client_flow(df, client_id)
+
+
+def dashboard():
+    st.title("Client Flow Dashboard")
+
+    logs_df = load_logs()
+    df=load_data()
+    if df is not None:
+        # client_ids = df['Primary_Key'].unique()
+        client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead_Project_ID']))
+
+        if client_id:
+            col1, col2 = st.columns([3, 1])
+
+            # Left column: Client flow diagram
+            with col1:
+                st.header("Client Flow")
+                plot_client_flow(logs_df, client_id)
+
+            # Right column: Client details
+            with col2:
+                st.header("Client Details")
+                client_details(client_id)
+    else:
+        st.error("Failed to load data from the database.")
+# dashboard()

@@ -1,15 +1,19 @@
 import streamlit as st
 from technician_page import technician_page
 from admin_page import admin_page
+from test import dashboard
 
 # Set up the main app layout
 st.title('Document Upload System')
 
 # Navigation
-page = st.sidebar.selectbox("Choose a page", ["Technician", "Admin"])
+page = st.sidebar.selectbox("Choose a page", ["Technician", "Admin","Dashboard"])
 
 # Load the appropriate page
 if page == "Technician":
     technician_page()
 elif page == "Admin":
     admin_page()
+elif page=="Dashboard":
+    dashboard
+
