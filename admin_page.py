@@ -26,7 +26,7 @@ def load_data():
 def update_pipeline(lead_id, column_name, value):
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = f"UPDATE Pipeline SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    query = "UPDATE Pipeline SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (value, lead_id))
     conn.commit()
     cursor.close()
@@ -86,7 +86,7 @@ def update_document_link(client_id, column_name, file_link):
     cursor = conn.cursor()
     
     # Update document link in leads table
-    query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    query = "UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
     # Log document upload
     log_action(client_id, "Leads", column_name, "Update", "", file_link)
