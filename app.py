@@ -15,5 +15,5 @@ if page == "Technician":
 elif page == "Admin":
     admin_page()
 elif page=="Dashboard":
-    dashboard
+    dashboard()
 
