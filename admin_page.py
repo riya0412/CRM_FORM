@@ -26,7 +26,7 @@ def load_data():
 def update_pipeline(lead_id, column_name, value):
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = "UPDATE Pipeline SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    query = f"UPDATE Pipeline SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (value, lead_id))
     conn.commit()
     cursor.close()
@@ -41,6 +41,7 @@ def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(timestamp)
     cursor.execute(query, (lead_project_id, timestamp, sheet_name, column_name, action, old_value, new_value))
     conn.commit()
     cursor.close()
@@ -86,7 +87,7 @@ def update_document_link(client_id, column_name, file_link):
     cursor = conn.cursor()
     
     # Update document link in leads table
-    query = "UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
     # Log document upload
     log_action(client_id, "Leads", column_name, "Update", "", file_link)
@@ -99,24 +100,6 @@ def update_document_link(client_id, column_name, file_link):
     conn.commit()
     cursor.close()
     conn.close()
-
-# Handle file upload
-def upload_documents(column_name, ftp_host, ftp_user, ftp_pass, ftp_directory):
-    uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
-    if 'uploaded_files' not in st.session_state:
-        st.session_state.uploaded_files = []
-
-    if uploaded_files:
-        st.session_state.uploaded_files.extend(uploaded_files)
-
-    if st.button("Upload"):
-        for uploaded_file in st.session_state.uploaded_files:
-            file_link = upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
-            st.success(f"Document uploaded successfully: {file_link}")
-            update_document_link(st.session_state.selected_client_id, column_name, file_link)
-            
-        st.session_state.uploaded_files = []
-        st.rerun()
 
 # Display client details
 def client_details(client_id):
@@ -170,9 +153,19 @@ def handle_upload_quotation(df):
         st.session_state.selected_client_id = int(client_id)
         client_details(st.session_state.selected_client_id)
         st.subheader("Upload Documents")
-        upload_documents("Admin_Uploads_5_Documents_consolidated", ftp_host, ftp_user, ftp_pass, ftp_directory)
+        uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
+        if st.button("Upload"):
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    file_link =  upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
+                    # Update the status in your database
+                    update_document_link(client_id, "Admin_Uploads_5_Documents_consolidated", file_link)
+                    update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
+                    st.success(f"Document uploaded successfully: {file_link}")
+                st.rerun()
+        # upload_documents("Admin_Uploads_5_Documents_consolidated", ftp_host, ftp_user, ftp_pass, ftp_directory)
         # update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
-        update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
+        # update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
 
 def handle_schedule_call(df):
     st.subheader("All Clients")
@@ -204,8 +197,18 @@ def handle_upload_pi_survey_sheet(df):
         st.session_state.selected_client_id = int(client_id)
         client_details(st.session_state.selected_client_id)
         st.subheader("Upload Documents")
-        upload_documents("PI_and_Survey_Sheet_Documents_uploaded_by_Technician", ftp_host, ftp_user, ftp_pass, ftp_directory)
-        update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
+        uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
+        if st.button("Upload"):
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    file_link =  upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
+                    # Update the status in your database
+                    update_document_link(client_id, "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", file_link)
+                    update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
+                    st.success(f"Document uploaded successfully: {file_link}")
+                st.rerun()
+        # upload_documents("PI_and_Survey_Sheet_Documents_uploaded_by_Technician", ftp_host, ftp_user, ftp_pass, ftp_directory)
+        # update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
 
 def handle_upload_survey_feedback(df):
     st.subheader("Pending Document Clients")
@@ -222,8 +225,18 @@ def handle_upload_survey_feedback(df):
         st.session_state.selected_client_id = int(client_id)
         client_details(st.session_state.selected_client_id)
         st.subheader("Upload Documents")
-        upload_documents("Survey_Feedback", ftp_host, ftp_user, ftp_pass, ftp_directory)
-        update_lead_status(client_id, "Survey Feedback")
+        uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
+        if st.button("Upload"):
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    file_link =  upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
+                    # Update the status in your database
+                    update_document_link(client_id, "Survey_Feedback", file_link)
+                    update_lead_status(client_id, "Survey Feedback")
+                    st.success(f"Document uploaded successfully: {file_link}")
+                st.rerun()
+        # upload_documents("Survey_Feedback", ftp_host, ftp_user, ftp_pass, ftp_directory)
+        # update_lead_status(client_id, "Survey Feedback")
 
 def delete_document(doc_name, client_id):
     conn = get_db_connection()
@@ -395,22 +408,6 @@ def show_delete_entity_page(df):
                     st.rerun()
 
 
-    # if st.button("Back to Admin Page"):
-    #     st.session_state.delete_entity_active = False
-    #     st.rerun()
-
-# def show_regular_admin_page(df):
-#     page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback"])
-    
-#     if page == "Upload Quotation":
-#         handle_upload_quotation(df)
-#     elif page == "Schedule Call":
-#         handle_schedule_call(df)
-#     elif page == "Upload PI and Survey sheet":
-#         handle_upload_pi_survey_sheet(df)
-#     elif page == "Upload Survey Feedback":
-#         handle_upload_survey_feedback(df)
-
 def admin_page():
     st.header("Admin Page")
     df = load_data()
@@ -427,19 +424,3 @@ def admin_page():
         handle_upload_survey_feedback(df)
     elif page=="Verify Uploaded Documents":
         show_delete_entity_page(df)
-    # Create a state variable for the Delete Entity button
-    # if 'delete_entity_active' not in st.session_state:
-    #     st.session_state.delete_entity_active = False
-
-    # # Delete Entity button in sidebar
-    # if st.sidebar.button("Delete Entity"):
-    #     st.session_state.delete_entity_active = True
-
-    # Check if Delete Entity is active
-    # if st.session_state.delete_entity_active:
-    #     show_delete_entity_page(df)
-    # else:
-    #     show_regular_admin_page(df)
-
-# if __name__ == "__main__":
-    # main()
