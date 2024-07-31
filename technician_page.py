@@ -110,6 +110,7 @@ def upload_document(client_id):
                 update_document_link(client_id, "Document_uploaded_by_Technician", file_link)
                 update_lead_status(client_id, "Document uploaded by Technician")
                 st.success(f"Document uploaded successfully: {file_link}")
+            st.rerun()
                 
 def upload_PI(client_id):
     df = load_data()
@@ -126,6 +127,7 @@ def upload_PI(client_id):
                 update_document_link(client_id, "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", file_link)
                 update_lead_status(client_id, "PI and Survey Sheet Documents uploaded by Technician")
                 st.success(f"Document uploaded successfully: {file_link}")
+            st.rerun()
 
 def client_details(client_id):
     st.title(f"Client Details")
