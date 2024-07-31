@@ -69,7 +69,7 @@ def upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory):
             ftp.cwd(ftp_directory)
             with open(temp_file_path, 'rb') as file:
                 ftp.storbinary(f'STOR {filename}', file)
-            ftp_link = f'ftp://{ftp_host}{ftp_directory}/{filename}'
+            ftp_link = f'{ftp_directory}/{filename}'
             print(f"File '{filename}' uploaded successfully. Link: {ftp_link}")
         except Exception as e:
             print(f"Failed to upload file: {e}")
