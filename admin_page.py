@@ -257,6 +257,7 @@ def delete_document(doc_name, client_id):
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
+        conn.commit()
         log_action(client_id, "Leads", "Document_uploaded_by_Technician", "Delete", link[0], "")
         update_lead_status(client_id, "Preliminary Meeting Scheduled")
 
@@ -272,6 +273,7 @@ def delete_document(doc_name, client_id):
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
+        conn.commit()
         log_action(client_id, "Leads", "Document_upload_by_Client", "Delete", link[0], "")
         update_lead_status(client_id, "Get Quote")
 
