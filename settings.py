@@ -4,14 +4,23 @@ import json
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
+from template import  fetch_templates
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+import atexit
 
 def get_users():
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor(dictionary=True)
@@ -27,11 +36,16 @@ def get_users():
 
 def update_user(user_id, username, password, role):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor()
@@ -59,11 +73,16 @@ def update_user(user_id, username, password, role):
 
 def delete_user(user_id):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor()
@@ -79,11 +98,16 @@ def delete_user(user_id):
 
 def add_user(username, password, role):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor()
@@ -132,11 +156,16 @@ def users():
 
 def get_api_keys():
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-                host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor(dictionary=True)
@@ -152,11 +181,16 @@ def get_api_keys():
 
 def update_api_key(api_id, new_key, description):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor()
@@ -176,11 +210,16 @@ def update_api_key(api_id, new_key, description):
 
 def add_api_key(api_key, description):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor()
@@ -196,6 +235,36 @@ def add_api_key(api_key, description):
         if connection.is_connected():
             cursor.close()
             connection.close()
+
+def templates():
+    st.title("Template Management")
+    scheduler = BackgroundScheduler()
+    current_interval = 24 
+    # Schedule the API fetch task
+    def schedule_task(interval):
+        global current_interval
+        current_interval = interval
+        scheduler.remove_all_jobs()
+        scheduler.add_job(fetch_templates, trigger=IntervalTrigger(hours=current_interval))
+
+    # Initialize scheduler
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+    schedule_task(current_interval)
+    # st.header("Settings")
+    interval = st.number_input("Set Timer Interval (hours)", min_value=1, max_value=168, value=current_interval)
+    
+    if st.button("Update Interval"):
+        schedule_task(interval)
+        st.success(f"Timer interval updated to {interval} hours.")
+
+    st.header("Current Scheduled Interval")
+    st.write(f"The current interval for the API call is set to {current_interval} hours.")
+    
+    st.header("Manual Fetch")
+    if st.button("Fetch Templates Now"):
+        fetch_templates()
+        st.success("Templates fetched and database updated.")
 
 def api():
     st.title("Settings")
@@ -223,8 +292,10 @@ def api():
 def settings_page():
     st.title("Settings")
 
-    setting=st.sidebar.selectbox("Choose settings", ["User Setting", "API Setting"])
+    setting=st.sidebar.selectbox("Choose settings", ["User Setting", "API Setting","Template Timer"])
     if setting == "User Setting":
         users()
     elif setting == "API Setting":
         api()
+    elif setting == "Template Timer":
+        templates()

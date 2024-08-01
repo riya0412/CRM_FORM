@@ -6,11 +6,16 @@ import bcrypt
 
 def authenticate_user(username, password):
     try:
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
         if connection.is_connected():
             cursor = connection.cursor(dictionary=True)

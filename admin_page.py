@@ -7,11 +7,16 @@ from ftplib import FTP
 
 # Initialize MySQL connection
 def get_db_connection():
+    dbcreds=st.secrets["database"]
+    host = dbcreds["dbhost"]
+    user = dbcreds["dbuser"]
+    password = dbcreds["dbpassword"]
+    database=dbcreds["dbdatabase"]
     return mysql.connector.connect(
-        host="srv1021.hstgr.io",
-        user="u627331871_Crmfile",
-        password="Crmfile@1234",
-        database="u627331871_Crmfile"
+        host=host,
+        user=user,
+        password=password,
+        database=database
     )
 
 # Load data from MySQL
@@ -101,6 +106,22 @@ def update_document_link(client_id, column_name, file_link):
     cursor.close()
     conn.close()
 
+# Handle file upload
+# def upload_documents(column_name, ftp_host, ftp_user, ftp_pass, ftp_directory):
+#     uploaded_files = st.file_uploader("Upload Documents", accept_multiple_files=True, key='file_uploader')
+
+#     if st.button("Upload"):
+#         if uploaded_files:
+#             for uploaded_file in uploaded_files:
+#                 file_link = upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory)
+#                 st.success(f"Document uploaded successfully: {file_link}")
+#                 update_document_link(st.session_state.selected_client_id, column_name, file_link)
+#             st.session_state.uploaded_files = []
+#         else:
+#             st.warning("Please select a file to upload.")
+
+        # st.rerun()
+
 # Display client details
 def client_details(client_id):
     st.title(f"Client Details")
@@ -143,9 +164,10 @@ def handle_upload_quotation(df):
     df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
     pending_df = df_selected[(df_selected['Status'] == 'Document uploaded by Technician') | (df_selected['Status'] == 'Document Upload by Client')]
     st.dataframe(pending_df)
-    ftp_host = '154.41.233.72'
-    ftp_user = 'u627331871.Crmfile'
-    ftp_pass = 'Crmfile@1234'
+    creds=st.secrets["ftp"]
+    ftp_host = creds["host"]
+    ftp_user = creds["user"]
+    ftp_pass = creds["password"]
     ftp_directory = '/'
     client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead_Project_ID']))
 
@@ -171,9 +193,10 @@ def handle_schedule_call(df):
     st.subheader("All Clients")
     df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
     st.dataframe(df_selected)
-    ftp_host = '154.41.233.72'
-    ftp_user = 'u627331871.Crmfile'
-    ftp_pass = 'Crmfile@1234'
+    creds=st.secrets["ftp"]
+    ftp_host = creds["host"]
+    ftp_user = creds["user"]
+    ftp_pass = creds["password"]
     ftp_directory = '/'
     client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead_Project_ID']))
 
@@ -187,9 +210,10 @@ def handle_upload_pi_survey_sheet(df):
     df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
     pending_df = df_selected[df_selected['Status'] == 'Final Meeting Scheduled']
     st.dataframe(pending_df)
-    ftp_host = '154.41.233.72'
-    ftp_user = 'u627331871.Crmfile'
-    ftp_pass = 'Crmfile@1234'
+    creds=st.secrets["ftp"]
+    ftp_host = creds["host"]
+    ftp_user = creds["user"]
+    ftp_pass = creds["password"]
     ftp_directory = '/'
     client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead_Project_ID']))
 
@@ -215,9 +239,10 @@ def handle_upload_survey_feedback(df):
     df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
     pending_df = df_selected[df_selected['Status'] == 'Order Delivered and Installation']
     st.dataframe(pending_df)
-    ftp_host = '154.41.233.72'
-    ftp_user = 'u627331871.Crmfile'
-    ftp_pass = 'Crmfile@1234'
+    creds=st.secrets["ftp"]
+    ftp_host = creds["host"]
+    ftp_user = creds["user"]
+    ftp_pass = creds["password"]
     ftp_directory = '/'
     client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead_Project_ID']))
 
@@ -410,6 +435,22 @@ def show_delete_entity_page(df):
                     st.rerun()
 
 
+    # if st.button("Back to Admin Page"):
+    #     st.session_state.delete_entity_active = False
+    #     st.rerun()
+
+# def show_regular_admin_page(df):
+#     page = st.sidebar.selectbox("Admin Task", ["Upload Quotation", "Schedule Call", "Upload PI and Survey sheet", "Upload Survey Feedback"])
+    
+#     if page == "Upload Quotation":
+#         handle_upload_quotation(df)
+#     elif page == "Schedule Call":
+#         handle_schedule_call(df)
+#     elif page == "Upload PI and Survey sheet":
+#         handle_upload_pi_survey_sheet(df)
+#     elif page == "Upload Survey Feedback":
+#         handle_upload_survey_feedback(df)
+
 def admin_page():
     st.header("Admin Page")
     df = load_data()
@@ -426,3 +467,19 @@ def admin_page():
         handle_upload_survey_feedback(df)
     elif page=="Verify Uploaded Documents":
         show_delete_entity_page(df)
+    # Create a state variable for the Delete Entity button
+    # if 'delete_entity_active' not in st.session_state:
+    #     st.session_state.delete_entity_active = False
+
+    # # Delete Entity button in sidebar
+    # if st.sidebar.button("Delete Entity"):
+    #     st.session_state.delete_entity_active = True
+
+    # Check if Delete Entity is active
+    # if st.session_state.delete_entity_active:
+    #     show_delete_entity_page(df)
+    # else:
+    #     show_regular_admin_page(df)
+
+# if __name__ == "__main__":
+    # main()

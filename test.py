@@ -8,11 +8,16 @@ import re
 def load_logs():
     try:
         # Replace with your database connection details
+        dbcreds=st.secrets["database"]
+        host = dbcreds["dbhost"]
+        user = dbcreds["dbuser"]
+        password = dbcreds["dbpassword"]
+        database=dbcreds["dbdatabase"]
         connection = mysql.connector.connect(
-            host="srv1021.hstgr.io",
-            user="u627331871_Crmfile",
-            password="Crmfile@1234",
-            database="u627331871_Crmfile"
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
 
         if connection.is_connected():
@@ -28,11 +33,16 @@ def load_logs():
 
 # Initialize MySQL connection
 def get_db_connection():
+    dbcreds=st.secrets["database"]
+    host = dbcreds["dbhost"]
+    user = dbcreds["dbuser"]
+    password = dbcreds["dbpassword"]
+    database=dbcreds["dbdatabase"]
     return mysql.connector.connect(
-        host="srv1021.hstgr.io",
-        user="u627331871_Crmfile",
-        password="Crmfile@1234",
-        database="u627331871_Crmfile"
+        host=host,
+        user=user,
+        password=password,
+        database=database
     )
 
 # Load data from MySQL
@@ -193,4 +203,4 @@ def dashboard():
                         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error("Failed to load data from the database.")
-# dashboard()
+dashboard()
