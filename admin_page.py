@@ -4,6 +4,9 @@ import mysql.connector
 from datetime import datetime
 import tempfile
 from ftplib import FTP
+import requests
+import ftplib
+import os
 
 # Initialize MySQL connection
 def get_db_connection():
@@ -188,22 +191,134 @@ def handle_upload_quotation(df):
         # upload_documents("Admin_Uploads_5_Documents_consolidated", ftp_host, ftp_user, ftp_pass, ftp_directory)
         # update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
         # update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
+def update_leads_action(lead_project_id, action, date_time=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    now = datetime.now()
+
+    if action == 'Follow Up':
+        follow_up_date = datetime.combine(date_time[0], date_time[1])
+        time_diff = (follow_up_date - now).days
+        
+        if time_diff <= 15:
+            drip_message = 3
+            drip_message_sequence = 1
+        else:
+            drip_message = 4
+            drip_message_sequence = 1
+
+        # Update Leads table
+        update_leads_query = """
+        UPDATE Leads
+        SET Status = 'Follow Up',
+            Last_Contact = %s,
+            Follow_up_Date = %s,
+            Next_Activity = DATE_ADD(%s, INTERVAL 48 HOUR),
+            Drip_sequence = %s,
+            Drip_Message_sequence = %s
+        WHERE Lead_Project_ID = %s
+        """
+        cursor.execute(update_leads_query, (now, follow_up_date, now, drip_message, drip_message_sequence, lead_project_id))
+
+        # Log the update
+        log_query = """
+        INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
+        VALUES (%s, %s, 'Leads', 'Follow_up_Date', 'Update', NULL, %s),
+               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'Follow Up'),
+               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
+               (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
+        """
+        cursor.execute(log_query, (lead_project_id, now, follow_up_date, lead_project_id, now, now, lead_project_id, now, follow_up_date))
+
+        # Update Pipeline table
+        update_pipeline_query = """
+        UPDATE Pipeline
+        SET Drip = TRUE
+        WHERE Lead_Project_ID = %s
+        """
+        cursor.execute(update_pipeline_query, (lead_project_id,))
+
+    elif action == 'Visit Scheduled':
+        visit_date = datetime.combine(date_time[0], date_time[1])
+
+        # Update Leads table
+        update_leads_query = """
+        UPDATE Leads
+        SET Status = 'Visit Scheduled',
+            Last_Contact = %s,
+            Final_Meeting_Scheduled_Date = %s,
+            Next_Activity = DATE_ADD(%s, INTERVAL 48 HOUR)
+        WHERE Lead_Project_ID = %s
+        """
+        cursor.execute(update_leads_query, (now, visit_date, now, lead_project_id))
+
+        # Log the update
+        log_query = """
+        INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
+        VALUES (%s, %s, 'Leads', 'Final_Meeting_Scheduled_Date', 'Update', NULL, %s),
+               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'Visit Scheduled'),
+               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
+               (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
+        """
+        cursor.execute(log_query, (lead_project_id, now, visit_date, lead_project_id, now, now, lead_project_id, now, visit_date))
+
+    elif action == 'No Response':
+        # Update Leads table
+        update_leads_query = """
+        UPDATE Leads
+        SET Status = 'No Response',
+            Last_Contact = %s,
+            Drip_sequence = 2,
+            Drip_Message_sequence = 1
+        WHERE Lead_Project_ID = %s
+        """
+        cursor.execute(update_leads_query, (now, lead_project_id))
+
+        # Log the update
+        log_query = """
+        INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
+        VALUES (%s, %s, 'Leads', 'Drip_sequence', 'Update', NULL, '2'),
+               (%s, %s, 'Leads', 'Drip_Message_sequence', 'Update', NULL, '1'),
+               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'No Response'),
+               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s)
+        """
+        cursor.execute(log_query, (lead_project_id, now, lead_project_id, now, lead_project_id, now, now))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 def handle_schedule_call(df):
     st.subheader("All Clients")
     df_selected = df[['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', 'Last_Contact']]
-    st.dataframe(df_selected)
+    pending_df = df_selected[df_selected['Status'] == 'Quotation Sent']
+    st.dataframe(pending_df)
     creds=st.secrets["ftp"]
     ftp_host = creds["host"]
     ftp_user = creds["user"]
     ftp_pass = creds["password"]
     ftp_directory = '/'
-    client_id = st.selectbox("Select Client ID", ["Please select"] + list(df['Lead_Project_ID']))
+    client_id = st.selectbox("Select Client ID", ["Please select"] + list(pending_df['Lead_Project_ID']))
 
     if client_id != "Please select":
         st.session_state.selected_client_id = int(client_id)
-        if st.button("Select"):
-            client_details(st.session_state.selected_client_id)
+        client_details(st.session_state.selected_client_id)
+        st.subheader("Call Details")
+        action = st.selectbox("Select Action", ["Please select"]+["Follow Up", "Visit Scheduled", "No Response"])
+        if action in ["Follow Up", "Visit Scheduled"]:
+            date = st.date_input("Select Date")
+            time = st.time_input("Select Time")
+            date_time = (date, time)
+            
+        if st.button("Submit"):
+            if client_id and action:
+                if action in ["Follow Up", "Visit Scheduled"] and date_time:
+                    update_leads_action(client_id, action, date_time)
+                elif action == "No Response":
+                    update_leads_action(client_id, action)
+                st.success("Lead updated successfully")
+    else:
+        st.error("Please provide all required inputs")
 
 def handle_upload_pi_survey_sheet(df):
     st.subheader("Pending Document Clients")
@@ -367,6 +482,68 @@ def delete_document(doc_name, client_id):
     # cursor.close()
     # conn.close()
 
+def download_file_from_ftp(ftp_url, local_path):
+    try:
+        # Parse FTP URL
+        creds=st.secrets["ftp"]
+        ftp_host = creds["host"]
+        ftp_user = creds["user"]
+        ftp_password = creds["password"]
+        # Remove leading slashes if present
+        if ftp_url.startswith('//'):
+            ftp_url = ftp_url.lstrip('/')
+        print(ftp_url)
+        # Extract file name from path
+        file_name = os.path.basename(ftp_url)
+        print(file_name)
+        # Define local file path
+        local_file_path = os.path.join(os.path.dirname(__file__), file_name)  # Save locally with the same filename
+        print(local_file_path)
+        # Connect to FTP server and download file
+        with ftplib.FTP(ftp_host) as ftp:
+            ftp.login(ftp_user, ftp_password)
+            st.write(f"Logged in to FTP server: {ftp_host}")
+
+            with open(local_file_path, 'wb') as local_file:
+                ftp.retrbinary(f'RETR {ftp_url}', local_file.write)
+        # ftp.quit()
+        print(local_file_path)
+        return local_file_path
+    except Exception as e:
+        st.error(f"Failed to download file from FTP: {e}")
+        return None
+
+def send_document(client_info, document_name, document_path):
+    api=st.secrets["API"]
+    API_URL = api["DOC_URL"]
+    API_KEY = api["API_KEY"]
+    headers = {
+    'accept': '*/*',
+    'X-Api-Key': API_KEY
+    }
+    
+    # Prepare the files parameter
+    files = {
+        'docFile': (document_name, open(document_path, 'rb'), 'application/pdf')
+    }
+    # print(client_info['WhatsApp_Number'])
+    # print(contact)
+    url = f"{API_URL}?contactNo={client_info['WhatsApp_Number']}"
+    # Prepare additional form data if needed
+    # data = {
+    #     'ContactNo': client_info['WhatsApp_Number'],
+    #     'ContactName': client_info['Lead_Name'],
+    #     # Add other required form fields here
+    # }
+    
+    # Send POST request with files and additional form data
+    response = requests.post(url, headers=headers, files=files)
+    
+    if response.status_code == 200:
+        st.success(f"Document '{document_name}' sent successfully!")
+    else:
+        st.error(f"Failed to send document. Status code: {response.status_code}, Response: {response.text}")
+
 def show_delete_entity_page(df):
     st.title("Verify Uploaded Documents")
     selected_columns = ['Lead_Project_ID', 'Lead_Name', 'WhatsApp_Number', 'Email', 'Address', 'Status', "Last_Contact"]
@@ -401,7 +578,7 @@ def show_delete_entity_page(df):
         for doc in documents:
             if doc["link"]!=None:
                 # print(doc["link"])
-                col1, col2, col3 = st.columns([4, 2, 1])
+                col1, col2, col3 = st.columns([4, 2, 2])
                 with col1:
                     st.write(f"[{doc['name']}]({doc['link']})")
                 with col2:
@@ -412,7 +589,11 @@ def show_delete_entity_page(df):
                         st.session_state.confirmation_doc_name = doc['name']
                 with col3:
                     if st.button("Send", key=f"send_{doc['name']}"):
-                        st.write(f"Sending {doc['name']}")
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                            local_path = download_file_from_ftp(doc["link"], tmp_file.name)
+                            if local_path:
+                                send_document(client_info, doc['name'], local_path)
+                                os.remove(local_path)  # Clean up the local file
 
         # Handle document deletion confirmation
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
