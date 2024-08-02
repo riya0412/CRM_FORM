@@ -317,6 +317,7 @@ def handle_schedule_call(df):
                 elif action == "No Response":
                     update_leads_action(client_id, action)
                 st.success("Lead updated successfully")
+                st.rerun()
     else:
         st.error("Please provide all required inputs")
 
