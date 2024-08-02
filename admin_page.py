@@ -7,7 +7,7 @@ from ftplib import FTP
 import requests
 import ftplib
 import os
-import time
+import time as tm
 
 # Initialize MySQL connection
 def get_db_connection():
@@ -318,7 +318,7 @@ def handle_schedule_call(df):
                 elif action == "No Response":
                     update_leads_action(client_id, action)
                 st.success("Lead updated successfully")
-                time.sleep(5)
+                tm.sleep(5)
                 st.rerun()
     else:
         st.error("Please provide all required inputs")
