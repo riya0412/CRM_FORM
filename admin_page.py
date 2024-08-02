@@ -220,7 +220,7 @@ def update_leads_action(lead_project_id, action, date_time=None):
         WHERE Lead_Project_ID = %s
         """
         cursor.execute(update_leads_query, (now, follow_up_date, now, drip_message, drip_message_sequence, lead_project_id))
-
+        conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
@@ -229,8 +229,8 @@ def update_leads_action(lead_project_id, action, date_time=None):
                (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
                (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
         """
-        cursor.execute(log_query, (lead_project_id, now, follow_up_date, lead_project_id, now, now, lead_project_id, now, follow_up_date))
-
+        cursor.execute(log_query, (lead_project_id, now, follow_up_date,lead_project_id, now, lead_project_id, now, now, lead_project_id, now, follow_up_date))
+        conn.commit()
         # Update Pipeline table
         update_pipeline_query = """
         UPDATE Pipeline
@@ -238,7 +238,7 @@ def update_leads_action(lead_project_id, action, date_time=None):
         WHERE Lead_Project_ID = %s
         """
         cursor.execute(update_pipeline_query, (lead_project_id,))
-
+        conn.commit()
     elif action == 'Visit Scheduled':
         visit_date = datetime.combine(date_time[0], date_time[1])
 
@@ -252,7 +252,7 @@ def update_leads_action(lead_project_id, action, date_time=None):
         WHERE Lead_Project_ID = %s
         """
         cursor.execute(update_leads_query, (now, visit_date, now, lead_project_id))
-
+        conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
@@ -261,8 +261,8 @@ def update_leads_action(lead_project_id, action, date_time=None):
                (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
                (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
         """
-        cursor.execute(log_query, (lead_project_id, now, visit_date, lead_project_id, now, now, lead_project_id, now, visit_date))
-
+        cursor.execute(log_query, (lead_project_id, now, visit_date,lead_project_id, now, lead_project_id, now, now, lead_project_id, now, visit_date))
+        conn.commit()
     elif action == 'No Response':
         # Update Leads table
         update_leads_query = """
@@ -274,7 +274,7 @@ def update_leads_action(lead_project_id, action, date_time=None):
         WHERE Lead_Project_ID = %s
         """
         cursor.execute(update_leads_query, (now, lead_project_id))
-
+        conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
@@ -283,8 +283,8 @@ def update_leads_action(lead_project_id, action, date_time=None):
                (%s, %s, 'Leads', 'Status', 'Update', NULL, 'No Response'),
                (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s)
         """
-        cursor.execute(log_query, (lead_project_id, now, lead_project_id, now, lead_project_id, now, now))
-
+        cursor.execute(log_query, (lead_project_id, now,lead_project_id, now, lead_project_id, now, lead_project_id, now, now))
+        conn.commit()
     conn.commit()
     cursor.close()
     conn.close()
