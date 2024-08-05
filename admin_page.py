@@ -544,6 +544,7 @@ def send_document(client_info, document_name, document_path):
     
     if response.status_code == 200:
         st.success(f"Document '{document_name}' sent successfully!")
+        st.success(response.text)
     else:
         st.error(f"Failed to send document. Status code: {response.status_code}, Response: {response.text}")
 
