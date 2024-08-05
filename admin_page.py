@@ -524,7 +524,7 @@ def send_document(client_info, document_name, document_path):
     'accept': '*/*',
     'X-Api-Key': API_KEY
     }
-    
+    payload = {}
     # Prepare the files parameter
     files = {
         'docFile': (document_name, open(document_path, 'rb'), 'application/pdf')
@@ -540,11 +540,11 @@ def send_document(client_info, document_name, document_path):
     # }
     
     # Send POST request with files and additional form data
-    response = requests.post(url, headers=headers, files=files)
+    response = requests.post(url, headers=headers, data=payload, files=files)
     
     if response.status_code == 200:
         st.success(f"Document '{document_name}' sent successfully!")
-        st.success(response.text)
+        st.write(response.text)
     else:
         st.error(f"Failed to send document. Status code: {response.status_code}, Response: {response.text}")
 
