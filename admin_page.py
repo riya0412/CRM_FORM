@@ -539,6 +539,11 @@ def send_document(client_info, document_name, document_path):
     #     # Add other required form fields here
     # }
     st.write(document_path)
+    def display_pdf(file_path):
+        with open(file_path, 'rb') as pdf_file:
+            pdf_bytes = pdf_file.read()
+            st.download_button(label="Download PDF", data=pdf_bytes, file_name="downloaded_file.pdf", mime="application/pdf")
+    display_pdf(document_path)
     # Send POST request with files and additional form data
     response = requests.post(url, headers=headers, data=payload, files=files)
     
