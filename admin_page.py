@@ -538,7 +538,7 @@ def send_document(client_info, document_name, document_path):
     #     'ContactName': client_info['Lead_Name'],
     #     # Add other required form fields here
     # }
-    
+    st.write(document_path)
     # Send POST request with files and additional form data
     response = requests.post(url, headers=headers, data=payload, files=files)
     
