@@ -544,7 +544,7 @@ def send_document(client_info, document_name, document_path):
     #         pdf_bytes = pdf_file.read()
     #         st.download_button(label="Download PDF", data=pdf_bytes, file_name="downloaded_file.pdf", mime="application/pdf")
     # display_pdf(document_path)
-    os.path.exists
+    st.write(os.path.exists)
     # Send POST request with files and additional form data
     response = requests.post(url, headers=headers, data=payload, files=files)
     
