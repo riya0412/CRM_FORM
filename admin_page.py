@@ -597,7 +597,7 @@ def show_delete_entity_page(df):
                             local_path = download_file_from_ftp(doc["link"], tmp_file.name)
                             if local_path:
                                 send_document(client_info, doc['name'], local_path)
-                                os.remove(local_path)  # Clean up the local file
+                                # os.remove(local_path)  # Clean up the local file
 
         # Handle document deletion confirmation
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
