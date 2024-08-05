@@ -511,7 +511,7 @@ def download_file_from_ftp(ftp_url, local_path):
                 ftp.retrbinary(f'RETR {ftp_url}', local_file.write)
         # ftp.quit()
         print(local_file_path)
-        return local_file_path
+        return local_file_path,file_name
     except Exception as e:
         st.error(f"Failed to download file from FTP: {e}")
         return None
@@ -600,10 +600,10 @@ def show_delete_entity_page(df):
                 with col3:
                     if st.button("Send", key=f"send_{doc['name']}"):
                         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                            local_path = download_file_from_ftp(doc["link"], tmp_file.name)
+                            local_path,file_name = download_file_from_ftp(doc["link"], tmp_file.name)
                             if local_path:
-                                send_document(client_info, doc['name'], local_path)
-                                # os.remove(local_path)  # Clean up the local file
+                                send_document(client_info, file_name, local_path)
+                                os.remove(local_path)  # Clean up the local file
 
         # Handle document deletion confirmation
         if 'delete_confirmation_shown' in st.session_state and st.session_state.delete_confirmation_shown:
