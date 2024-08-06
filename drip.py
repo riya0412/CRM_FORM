@@ -151,5 +151,6 @@ def drip_settings_page():
     if st.button("Add Drip"):
         if add_drip_to_db(drip_id, selected_step_id, message_details):
             st.success("Drip added successfully!")
+        st.rerun()
         else:
             st.error("Failed to add drip. Please try again.")
