@@ -8,6 +8,8 @@ from template import  fetch_templates
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import atexit
+from drip import drip_settings_page
+from reminder import reminder_setting
 
 def get_users():
     try:
@@ -358,7 +360,7 @@ def api():
 def settings_page():
     st.title("Settings")
 
-    setting=st.sidebar.selectbox("Choose settings", ["User Setting", "API Setting","Schedule Job","Template"])
+    setting=st.sidebar.selectbox("Choose settings", ["User Setting", "API Setting","Schedule Job","Template","Reminder Message","Drip"])
     if setting == "User Setting":
         users()
     elif setting == "API Setting":
@@ -367,4 +369,8 @@ def settings_page():
         templates()
     elif setting == "Template":
         display_templates()
+    elif setting == "Reminder Message":
+        reminder_setting()
+    elif setting == "Drip":
+        drip_settings_page()
 
