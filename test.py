@@ -48,7 +48,7 @@ def get_db_connection():
 # Load data from MySQL
 def load_data():
     conn = get_db_connection()
-    query = "SELECT * FROM Leads"
+    query = "SELECT * FROM Old_Leads"
     df = pd.read_sql(query, conn)
     conn.close()
     return df
@@ -93,12 +93,12 @@ def preprocess_column_name(name):
     # Remove any extra characters like '?' and trim whitespace
     return re.sub(r'[^\w\s]', '', name).strip().lower()
 
-def find_matching_value(stage, leads_data):
+def find_matching_value(stage, Old_Leads_data):
     # Preprocess the stage name
     cleaned_stage = preprocess_column_name(stage)
     
-    for _, row in leads_data.iterrows():
-        # Preprocess the column name from leads data
+    for _, row in Old_Leads_data.iterrows():
+        # Preprocess the column name from Old_Leads data
         cleaned_column_name = preprocess_column_name(row['Column_Name'])
         # Check if the cleaned stage name is a substring of the cleaned column name
         if cleaned_stage in cleaned_column_name:
@@ -109,7 +109,7 @@ def find_matching_value(stage, leads_data):
 def plot_client_flow(df, client_id):
     # Filter data for the given client
     pipeline_data = df[(df['Primary_Key'] == client_id) & (df['Sheet_Name'] == 'Pipeline') & (df['Column_Name'] != 'Status')]
-    leads_data = df[(df['Primary_Key'] == client_id) & (df['Sheet_Name'] == 'Leads from Anantya') & (df['Column_Name'] != 'Status')]
+    Old_Leads_data = df[(df['Primary_Key'] == client_id) & (df['Sheet_Name'] == 'Old_Leads from Anantya') & (df['Column_Name'] != 'Status')]
 
     stages = []
     values = []
@@ -122,8 +122,8 @@ def plot_client_flow(df, client_id):
         timestamps.append(row['Timestamp'])
         action.append(row["Action"])
 
-        # Find the corresponding value from leads_data
-        value = find_matching_value(stage, leads_data)
+        # Find the corresponding value from Old_Leads_data
+        value = find_matching_value(stage, Old_Leads_data)
         values.append(value)
 
     if not stages:
