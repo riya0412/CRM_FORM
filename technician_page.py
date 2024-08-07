@@ -20,7 +20,7 @@ def get_db_connection():
     )
 def load_data():
     conn = get_db_connection()
-    query = "SELECT * FROM Leads"
+    query = "SELECT * FROM Old_Leads"
     df = pd.read_sql(query, conn)
     conn.close()
     return df
@@ -42,15 +42,15 @@ def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_
 def update_lead_status(lead_id, new_status):
     conn = get_db_connection()
     cursor = conn.cursor()
-    query1="select Status from Leads where Lead_Project_ID=%s "
+    query1="select Status from Old_Leads where Lead_Project_ID=%s "
     cursor.execute(query1, (lead_id,))
     old_status=cursor.fetchone()
-    query2 = "UPDATE Leads SET Status = %s, Last_Contact = %s WHERE Lead_Project_ID = %s"
+    query2 = "UPDATE Old_Leads SET Status = %s, Last_Contact = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query2, (new_status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), lead_id))
     conn.commit()
     cursor.close()
     conn.close()
-    log_action(lead_id, 'Leads', 'Status', 'Update', old_status[0], new_status)
+    log_action(lead_id, 'Old_Leads', 'Status', 'Update', old_status[0], new_status)
 def update_pipeline(lead_id, column_name, value):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -84,11 +84,11 @@ def update_document_link(client_id, column_name, file_link):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Update document link in leads table
-    query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    # Update document link in Old_Leads table
+    query = f"UPDATE Old_Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
     # Log document upload
-    log_action(client_id, "Leads", column_name, "Update", "", file_link)
+    log_action(client_id, "Old_Leads", column_name, "Update", "", file_link)
     # Update pipeline table
     update_pipeline(client_id, column_name, "TRUE")
     
@@ -183,7 +183,7 @@ def technician_page():
             st.subheader("Upload Documents")
             upload_document(client_id)
         # Select a client
-        # log_action(client_id, "Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
+        # log_action(client_id, "Old_Leads from Anantya", "Admin Uploads 5 Documents consolidated","Document Upload", "Pending", "Uploaded")
     elif page=="Upload PI and Survey sheet":
         # Display all clients
         st.subheader("Pending Document Clients")
