@@ -26,7 +26,7 @@ def get_db_connection():
 # Load data from MySQL
 def load_data():
     conn = get_db_connection()
-    query = "SELECT * FROM Leads"
+    query = "SELECT * FROM Old_Old_Leads"
     df = pd.read_sql(query, conn)
     conn.close()
     return df
@@ -60,15 +60,15 @@ def log_action(lead_project_id, sheet_name, column_name, action, old_value, new_
 def update_lead_status(lead_id, new_status):
     conn = get_db_connection()
     cursor = conn.cursor()
-    query1="select Status from Leads where Lead_Project_ID=%s "
+    query1="select Status from Old_Leads where Lead_Project_ID=%s "
     cursor.execute(query1, (lead_id,))
     old_status=cursor.fetchone()
-    query2 = "UPDATE Leads SET Status = %s, Last_Contact = %s WHERE Lead_Project_ID = %s"
+    query2 = "UPDATE Old_Leads SET Status = %s, Last_Contact = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query2, (new_status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), lead_id))
     conn.commit()
     cursor.close()
     conn.close()
-    log_action(lead_id, 'Leads', 'Status', 'Update', old_status[0], new_status)
+    log_action(lead_id, 'Old_Leads', 'Status', 'Update', old_status[0], new_status)
 
 # Upload to FTP
 def upload_to_ftp(uploaded_file, ftp_host, ftp_user, ftp_pass, ftp_directory):
@@ -95,11 +95,11 @@ def update_document_link(client_id, column_name, file_link):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Update document link in leads table
-    query = f"UPDATE Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
+    # Update document link in Old_Leads table
+    query = f"UPDATE Old_Leads SET {column_name} = %s WHERE Lead_Project_ID = %s"
     cursor.execute(query, (file_link, client_id))
     # Log document upload
-    log_action(client_id, "Leads", column_name, "Update", "", file_link)
+    log_action(client_id, "Old_Leads", column_name, "Update", "", file_link)
     # Update pipeline table
     update_pipeline(client_id, column_name, "TRUE")
     
@@ -192,7 +192,7 @@ def handle_upload_quotation(df):
         # upload_documents("Admin_Uploads_5_Documents_consolidated", ftp_host, ftp_user, ftp_pass, ftp_directory)
         # update_lead_status(client_id, "Admin Uploads 5 Documents consolidated")
         # update_lead_status(st.session_state.selected_client_id, "Admin Uploads 5 Documents consolidated")
-def update_leads_action(lead_project_id, action, date_time=None):
+def update_Old_Leads_action(lead_project_id, action, date_time=None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -209,9 +209,9 @@ def update_leads_action(lead_project_id, action, date_time=None):
             drip_message = 4
             drip_message_sequence = 1
 
-        # Update Leads table
-        update_leads_query = """
-        UPDATE Leads
+        # Update Old_Leads table
+        update_Old_Leads_query = """
+        UPDATE Old_Leads
         SET Status = 'Follow Up',
             Last_Contact = %s,
             Follow_up_Date = %s,
@@ -220,15 +220,15 @@ def update_leads_action(lead_project_id, action, date_time=None):
             Drip_Message_sequence = %s
         WHERE Lead_Project_ID = %s
         """
-        cursor.execute(update_leads_query, (now, follow_up_date, now, drip_message, drip_message_sequence, lead_project_id))
+        cursor.execute(update_Old_Leads_query, (now, follow_up_date, now, drip_message, drip_message_sequence, lead_project_id))
         conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
-        VALUES (%s, %s, 'Leads', 'Follow_up_Date', 'Update', NULL, %s),
-               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'Follow Up'),
-               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
-               (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
+        VALUES (%s, %s, 'Old_Leads', 'Follow_up_Date', 'Update', NULL, %s),
+               (%s, %s, 'Old_Leads', 'Status', 'Update', NULL, 'Follow Up'),
+               (%s, %s, 'Old_Leads', 'Last_Contact', 'Update', NULL, %s),
+               (%s, %s, 'Old_Leads', 'Next_Activity', 'Update', NULL, %s)
         """
         cursor.execute(log_query, (lead_project_id, now, follow_up_date,lead_project_id, now, lead_project_id, now, now, lead_project_id, now, follow_up_date))
         conn.commit()
@@ -243,46 +243,46 @@ def update_leads_action(lead_project_id, action, date_time=None):
     elif action == 'Visit Scheduled':
         visit_date = datetime.combine(date_time[0], date_time[1])
 
-        # Update Leads table
-        update_leads_query = """
-        UPDATE Leads
+        # Update Old_Leads table
+        update_Old_Leads_query = """
+        UPDATE Old_Leads
         SET Status = 'Visit Scheduled',
             Last_Contact = %s,
             Final_Meeting_Scheduled_Date = %s,
             Next_Activity = DATE_ADD(%s, INTERVAL 48 HOUR)
         WHERE Lead_Project_ID = %s
         """
-        cursor.execute(update_leads_query, (now, visit_date, now, lead_project_id))
+        cursor.execute(update_Old_Leads_query, (now, visit_date, now, lead_project_id))
         conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
-        VALUES (%s, %s, 'Leads', 'Final_Meeting_Scheduled_Date', 'Update', NULL, %s),
-               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'Visit Scheduled'),
-               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s),
-               (%s, %s, 'Leads', 'Next_Activity', 'Update', NULL, %s)
+        VALUES (%s, %s, 'Old_Leads', 'Final_Meeting_Scheduled_Date', 'Update', NULL, %s),
+               (%s, %s, 'Old_Leads', 'Status', 'Update', NULL, 'Visit Scheduled'),
+               (%s, %s, 'Old_Leads', 'Last_Contact', 'Update', NULL, %s),
+               (%s, %s, 'Old_Leads', 'Next_Activity', 'Update', NULL, %s)
         """
         cursor.execute(log_query, (lead_project_id, now, visit_date,lead_project_id, now, lead_project_id, now, now, lead_project_id, now, visit_date))
         conn.commit()
     elif action == 'No Response':
-        # Update Leads table
-        update_leads_query = """
-        UPDATE Leads
+        # Update Old_Leads table
+        update_Old_Leads_query = """
+        UPDATE Old_Leads
         SET Status = 'No Response',
             Last_Contact = %s,
             Drip_sequence = 2,
             Drip_Message_sequence = 1
         WHERE Lead_Project_ID = %s
         """
-        cursor.execute(update_leads_query, (now, lead_project_id))
+        cursor.execute(update_Old_Leads_query, (now, lead_project_id))
         conn.commit()
         # Log the update
         log_query = """
         INSERT INTO Logs (Primary_Key, Timestamp, Sheet_Name, Column_Name, Action, Old_Value, New_Value)
-        VALUES (%s, %s, 'Leads', 'Drip_sequence', 'Update', NULL, '2'),
-               (%s, %s, 'Leads', 'Drip_Message_sequence', 'Update', NULL, '1'),
-               (%s, %s, 'Leads', 'Status', 'Update', NULL, 'No Response'),
-               (%s, %s, 'Leads', 'Last_Contact', 'Update', NULL, %s)
+        VALUES (%s, %s, 'Old_Leads', 'Drip_sequence', 'Update', NULL, '2'),
+               (%s, %s, 'Old_Leads', 'Drip_Message_sequence', 'Update', NULL, '1'),
+               (%s, %s, 'Old_Leads', 'Status', 'Update', NULL, 'No Response'),
+               (%s, %s, 'Old_Leads', 'Last_Contact', 'Update', NULL, %s)
         """
         cursor.execute(log_query, (lead_project_id, now,lead_project_id, now, lead_project_id, now, lead_project_id, now, now))
         conn.commit()
@@ -314,9 +314,9 @@ def handle_schedule_call(df):
         if st.button("Submit"):
             if client_id and action:
                 if action in ["Follow Up", "Visit Scheduled"] and date_time:
-                    update_leads_action(client_id, action, date_time)
+                    update_Old_Leads_action(client_id, action, date_time)
                 elif action == "No Response":
-                    update_leads_action(client_id, action)
+                    update_Old_Leads_action(client_id, action)
                 st.success("Lead updated successfully")
                 tm.sleep(5)
                 st.rerun()
@@ -384,59 +384,59 @@ def handle_upload_survey_feedback(df):
 def delete_document(doc_name, client_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = f"SELECT * FROM Leads WHERE Lead_Project_ID = %s"
+    query = f"SELECT * FROM Old_Leads WHERE Lead_Project_ID = %s"
     cursor.execute(query, (client_id,))
     client_info = cursor.fetchone()
     
     if doc_name == "Document uploaded by Technician":
         update_pipeline(client_id, "Document_uploaded_by_Technician", "0")
         log_action(client_id, "Pipeline", "Document_uploaded_by_Technician", "Delete", "TRUE", "0")
-        query1 = "SELECT Document_uploaded_by_Technician FROM Leads WHERE Lead_Project_ID = %s"
+        query1 = "SELECT Document_uploaded_by_Technician FROM Old_Leads WHERE Lead_Project_ID = %s"
         cursor.execute(query1, (client_id,))
         link=cursor.fetchone()
         query = '''
-            UPDATE Leads
+            UPDATE Old_Leads
             SET Document_uploaded_by_Technician = NULL
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
         conn.commit()
-        log_action(client_id, "Leads", "Document_uploaded_by_Technician", "Delete", link[0], "")
+        log_action(client_id, "Old_Leads", "Document_uploaded_by_Technician", "Delete", link[0], "")
         update_lead_status(client_id, "Preliminary Meeting Scheduled")
 
     elif doc_name == "Document upload by Client":
         update_pipeline(client_id, "Document_upload_by_Client", "0")
         log_action(client_id, "Pipeline", "Document_upload_by_Client", "Delete", "TRUE", "0")
-        query1 = "SELECT Document_upload_by_Client FROM Leads WHERE Lead_Project_ID = %s"
+        query1 = "SELECT Document_upload_by_Client FROM Old_Leads WHERE Lead_Project_ID = %s"
         cursor.execute(query1, (client_id,))
         link=cursor.fetchone()
         query = '''
-            UPDATE Leads
+            UPDATE Old_Leads
             SET Document_upload_by_Client = NULL
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
         conn.commit()
-        log_action(client_id, "Leads", "Document_upload_by_Client", "Delete", link[0], "")
+        log_action(client_id, "Old_Leads", "Document_upload_by_Client", "Delete", link[0], "")
         update_lead_status(client_id, "Get Quote")
 
     elif doc_name == "Admin Uploads 5 Documents consolidated":
         update_pipeline(client_id, "Admin_Uploads_5_Documents_consolidated", "0")
         log_action(client_id, "Pipeline", "Admin_Uploads_5_Documents_consolidated", "Delete", "TRUE", "0")
-        query1 = "SELECT Admin_Uploads_5_Documents_consolidated FROM Leads WHERE Lead_Project_ID = %s"
+        query1 = "SELECT Admin_Uploads_5_Documents_consolidated FROM Old_Leads WHERE Lead_Project_ID = %s"
         cursor.execute(query1, (client_id,))
         link=cursor.fetchone()
         query = '''
-            UPDATE Leads
+            UPDATE Old_Leads
             SET Admin_Uploads_5_Documents_consolidated = NULL
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
         conn.commit()
-        log_action(client_id, "Leads", "Admin_Uploads_5_Documents_consolidated", "Delete", link[0], "")
+        log_action(client_id, "Old_Leads", "Admin_Uploads_5_Documents_consolidated", "Delete", link[0], "")
         cursor.execute("""
         SELECT "Document_uploaded_by_Technician", "Document_Upload_by_Client"
-        FROM Leads
+        FROM Old_Leads
         WHERE Lead_Project_ID = %s
         """, (client_id,))
         client_info = cursor.fetchone()
@@ -452,33 +452,33 @@ def delete_document(doc_name, client_id):
     elif doc_name == "PI and Survey Sheet Documents uploaded by Technician":
         update_pipeline(client_id, "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", "0")
         log_action(client_id, "Pipeline", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", "Delete", "TRUE", "0")
-        query1 = "SELECT PI_and_Survey_Sheet_Documents_uploaded_by_Technician FROM Leads WHERE Lead_Project_ID = %s"
+        query1 = "SELECT PI_and_Survey_Sheet_Documents_uploaded_by_Technician FROM Old_Leads WHERE Lead_Project_ID = %s"
         cursor.execute(query1, (client_id,))
         link=cursor.fetchone()
         query = '''
-            UPDATE Leads
+            UPDATE Old_Leads
             SET PI_and_Survey_Sheet_Documents_uploaded_by_Technician = NULL
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
         conn.commit()
-        log_action(client_id, "Leads", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", "Delete", link[0], "")
+        log_action(client_id, "Old_Leads", "PI_and_Survey_Sheet_Documents_uploaded_by_Technician", "Delete", link[0], "")
         update_lead_status(client_id, "Final Meeting Scheduled")
     
     elif doc_name == "Survey Feedback":
         update_pipeline(client_id, "Survey_Feedback", "0")
         log_action(client_id, "Pipeline", "Survey_Feedback", "Delete", "TRUE", "0")
-        query1 = "SELECT Survey_Feedback FROM Leads WHERE Lead_Project_ID = %s"
+        query1 = "SELECT Survey_Feedback FROM Old_Leads WHERE Lead_Project_ID = %s"
         cursor.execute(query1, (client_id,))
         link=cursor.fetchone()
         query = '''
-            UPDATE Leads
+            UPDATE Old_Leads
             SET Survey_Feedback = NULL
             WHERE Lead_Project_ID = %s
             '''
         cursor.execute(query, (client_id,))
         conn.commit()
-        log_action(client_id, "Leads", "Survey_Feedback", "Delete", link[0], "")
+        log_action(client_id, "Old_Leads", "Survey_Feedback", "Delete", link[0], "")
         update_lead_status(client_id, "Order Delivered and Installation")
     
     # conn.commit()
